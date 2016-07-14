@@ -3,28 +3,61 @@ from __future__ import print_function
 from argparse import ArgumentParser
 from tika import parser as tkparser
 import json
+import os
 
 
-def parse_files(paths):
+class Parser(object):
+
+    def __init__(self, server_url=None):
+        if server_url:
+            os.environ['TIKA_CLIENT_ONLY'] = 'True'
+            os.environ['TIKA_SERVER_ENDPOINT'] = server_url
+            print("Tika Server Endpoint %s" % os.environ['TIKA_SERVER_ENDPOINT'])
+        import tika
+        tika.initVM()
+
+    def parse_files(self, paths):
+        """
+        Parses stream of files and produces stream of parsed content
+        :param paths: stream/list of file paths
+        :return: stream of parsed content
+        """
+        for p in paths:
+            try:
+                yield self.parse_file(p)
+            except Exception as e:
+                print("Error: %s" % e)
+
+    def parse_file(self, path):
+        """
+        Parses a file at given path
+        :param path: path to file
+        :return: parsed content
+        """
+        parsed = tkparser.from_file(path)
+        parsed['file'] = os.path.abspath(path)
+        return parsed
+
+
+def read_lines(listfile, skip_blank=True, skip_comments=True):
     """
-    Parses stream of files and produces stream of parsed content
-    :param paths: stream/list of file paths
-    :return: stream of parsed content
+    Reads lines from a list file
+    :param listfile: a file having strings, one per line
+    :param skip_blank:
+    :param skip_comments:
+    :return:
     """
-    for p in paths:
-        try:
-            yield tkparser.from_file(p)
-        except Exception as e:
-            print("Error: %s" % e)
+    with open(listfile, 'rb') as paths:
+        paths = map(lambda x: x.strip(), paths)
+        if skip_blank:
+            paths = filter(lambda x: x, paths)
+        if skip_comments:
+            paths = filter(lambda x: not x.startswith("#"), paths)
+        for p in paths:
+            yield p
 
 
-def init(server_url=None):
-    import tika
-    tika.initVM()
-    # TODO: init from srever_url
-
-
-def dump_as_jsonlines(objects, filename):
+def dump_jsonlines(objects, filename):
     """
     Stores objects into file in JSON line format.
     :param objects: stream of objects to be dumped
@@ -42,8 +75,7 @@ def dump_as_jsonlines(objects, filename):
     return count
 
 
-if __name__ == '__main__':
-
+def main(parser_class):
     # Step : Parse CLI args
     parser = ArgumentParser(prog="Parser Indexer", description="This tool can parse files and index to solr.",
                             version="1.0")
@@ -53,25 +85,19 @@ if __name__ == '__main__':
     parser.add_argument("-o", "--out", help="Path to output file.", required=True)
     parser.add_argument("-p", "--parser-url", help="URL of Tika Server.", required=False)
     args = vars(parser.parse_args())
-    print(args)
 
     # Step : Initialize Tika
-    init(args['parser_url'])
-    cleanups = []
+    parser = parser_class(args['parser_url'])
     # get stream/list of files
     if args['list']:
-        files = open(args['list'], 'rb')
-        cleanups.append(lambda: files.close())
-        files = filter(lambda x: x and not x.startswith("#"), map(lambda y: y.strip(), files))
+        files = read_lines(args['list'])
     else:
         files = [args['in']]
     # Step : Parse
-    parsed = parse_files(files)
+    parsed = parser.parse_files(files)
     # Step store the objects to file
-    dump_as_jsonlines(parsed, args['out'])
+    dump_jsonlines(parsed, args['out'])
 
-    for cl in cleanups:
-        try:
-            cl()
-        except Exception:
-            pass  # ignore
+
+if __name__ == '__main__':
+    main(Parser)
