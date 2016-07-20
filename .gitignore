@@ -3,3 +3,5 @@ workspace/
 *~
 tmp/
 temp/
+parser-server/target
+data/

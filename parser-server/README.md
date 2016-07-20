@@ -10,6 +10,7 @@ This projects includes configurations and machine learning models required for
 
  2. Tika Core NLP addon :
 
+
     git clone https://github.com/thammegowda/tika-ner-corenlp.git
     cd tika-ner-corenlp
     mvn clean compile && mvn install
@@ -19,17 +20,20 @@ This projects includes configurations and machine learning models required for
     Full details at https://wiki.apache.org/tika/GrobidJournalParser
     Follow these steps for a head start:
 
-     git clone https://github.com/kermitt2/grobid.git
-     cd grobid
-     mvn install
-     cd grobid-service
-     mvn -Dmaven.test.skip=true jetty:run-war
+
+    git clone https://github.com/kermitt2/grobid.git
+    cd grobid
+    mvn install
+    cd grobid-service
+    mvn -Dmaven.test.skip=true jetty:run-war
 
 
  4. Build parser-server
+
+
     cd {to/your/parser-server/path}
     mvn clean compile assembly:single
 
  5. Launch Parser server
+ 
     ./run.sh
-
