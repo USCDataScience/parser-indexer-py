@@ -1,0 +1,6 @@
+[submodule "parser-server/grobid"]
+	path = parser-server/grobid
+	url = https://github.com/kermitt2/grobid.git
+[submodule "parser-server/tika-ner-corenlp"]
+	path = parser-server/tika-ner-corenlp
+	url = https://github.com/thammegowda/tika-ner-corenlp.git
