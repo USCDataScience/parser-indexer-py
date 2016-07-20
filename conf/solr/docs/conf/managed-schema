@@ -144,15 +144,21 @@
     <field name="description" type="text_general" stored="true" indexed="true"/>
     <field name="keywords" type="string" stored="true" indexed="true" multiValued="true"/>
     <field name="keywords_ts" type="text_general" stored="false" indexed="true" multiValued="true"/>
-    <field name="createdAt" type="date" stored="true" indexed="true"/>
     <field name="contentType" type="string" stored="true" indexed="true"/>
     <field name="mainType" type="string" stored="true" indexed="true"/>
     <field name="subType" type="string" stored="true" indexed="true"/>
+    <field name="createdAt" type="date" stored="true" indexed="true"/>
+    <field name="modifiedAt" type="date" stored="true" indexed="true"/>
 
     <!--For the sake of index management / operations -->
     <field name="type" type="string" indexed="true" stored="true" multiValued="true"/>
     <field name="source" type="string" indexed="true" stored="true"/>
+
     <field name="indexedAt" type="date" stored="true" indexed="true" default="NOW"/>
+
+    <!-- Journal papers -->
+    <field name="authors" type="string" stored="true" indexed="true" multiValued="true"/>
+    <field name="authors_ts" type="text_general" stored="false" indexed="true" multiValued="true"/>
 
 
     <field name="persons" type="string" stored="true" indexed="true" multiValued="true"/>
@@ -293,6 +299,7 @@
     <!--Copies of untokenized field to tokenized field -->
 
     <copyField source="keywords" dest="keywords_ts"/>
+    <copyField source="authors" dest="authors_ts"/>
     <copyField source="persons" dest="persons_ts"/>
     <copyField source="url" dest="url_ts"/>
     <copyField source="phonenumbers" dest="phonenumbers_ts"/>
@@ -304,6 +311,7 @@
     <copyField source="title" dest="text"/>
     <copyField source="description" dest="text"/>
     <copyField source="keywords" dest="text"/>
+    <copyField source="authors" dest="text"/>
     <copyField source="content" dest="text"/>
     <copyField source="description" dest="text"/>
     <copyField source="keywords" dest="text"/>
