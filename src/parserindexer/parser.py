@@ -2,7 +2,7 @@ from __future__ import print_function
 
 from argparse import ArgumentParser
 from tika import parser as tkparser
-import json
+from ioutils import read_lines, dump_jsonlines
 import os
 
 
@@ -39,45 +39,9 @@ class Parser(object):
         return parsed
 
 
-def read_lines(listfile, skip_blank=True, skip_comments=True):
-    """
-    Reads lines from a list file
-    :param listfile: a file having strings, one per line
-    :param skip_blank:
-    :param skip_comments:
-    :return:
-    """
-    with open(listfile, 'rb') as paths:
-        paths = map(lambda x: x.strip(), paths)
-        if skip_blank:
-            paths = filter(lambda x: x, paths)
-        if skip_comments:
-            paths = filter(lambda x: not x.startswith("#"), paths)
-        for p in paths:
-            yield p
-
-
-def dump_jsonlines(objects, filename):
-    """
-    Stores objects into file in JSON line format.
-    :param objects: stream of objects to be dumped
-    :param filename: path of output file
-    :return: number of objects dumped, which is same as number of lines stored
-    """
-    count = 0
-    print("Writing to %s" % filename)
-    with open(filename, 'wb', 1) as out:
-        for obj in objects:
-            out.write(json.dumps(obj))
-            out.write("\n")
-            count += 1
-    print("Stored %d objects to %s" % (count, filename))
-    return count
-
-
 def main(parser_class):
     # Step : Parse CLI args
-    parser = ArgumentParser(prog="Parser Indexer", description="This tool can parse files and index to solr.",
+    parser = ArgumentParser(prog=parser_class.__name__, description="This tool can parse files.",
                             version="1.0")
     input_args = parser.add_mutually_exclusive_group(required=True)
     input_args.add_argument("-i", "--in", help="Path to Input File.")
