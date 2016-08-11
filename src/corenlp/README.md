@@ -27,9 +27,8 @@ Goto CoreNLP extracted directory and runs
 ## Step 4: Prepare input text and annotations
 List all the `.txt` files and `.ann` files to a path list file
 
-    $ ls $PWD/*.txt > 1.list
-    $ ls $PWD/*.ann > 2.list
-    $ paste  -d "," 1.list  2.list  > input.list
+    $ ls $PWD/*.ann | sed -e 's/\(.*\)\.ann/\1.txt,\1.ann/g' > input.list
+    
 
 ## Step 5: Separate the training and testing records
 
