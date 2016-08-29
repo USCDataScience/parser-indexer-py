@@ -1,5 +1,8 @@
 # Parser-Indexer
+This project contains tools for parsing files and indexing to solr. It also includes tools for information extraction.
 
+
+For instructions related to training the custom Named Entity Recognition model using Stanford CoreNLP, visit [src/corenlp](src/corenlp)
 
 ## Requirements
 
