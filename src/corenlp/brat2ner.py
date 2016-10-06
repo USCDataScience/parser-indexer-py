@@ -3,6 +3,10 @@ from __future__ import print_function
 from pycorenlp import StanfordCoreNLP
 import os
 from argparse import ArgumentParser
+import sys
+reload(sys)  # Reload does the trick!
+sys.setdefaultencoding('UTF8')
+
 
 class BratToNerConverter(object):
     def __init__(self, corenlp_url='http://localhost:9000'):
