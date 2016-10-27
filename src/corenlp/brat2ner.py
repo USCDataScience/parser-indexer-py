@@ -7,6 +7,7 @@ import sys
 reload(sys)  # Reload does the trick!
 sys.setdefaultencoding('UTF8')
 
+accept_labels = set(['Element', 'Mineral', 'Target', 'Material', 'Locality', 'Site'])
 
 class BratToNerConverter(object):
     def __init__(self, corenlp_url='http://localhost:9000'):
@@ -21,6 +22,10 @@ class BratToNerConverter(object):
     def convert(self, text_file, ann_file):
         text, tree = self.parse(text_file, ann_file)
         props = { 'annotators': 'tokenize,ssplit', 'outputFormat': 'json'}
+        if text[0].isspace():
+            text = '.' + text[1:]
+            # Reason: some tools trim/strip off the white spaces
+            # which will mismatch the character offsets
         output = self.corenlp.annotate(text, properties=props)
         records = []
         for sentence in output['sentences']:
@@ -32,7 +37,8 @@ class BratToNerConverter(object):
                     if end in node:
                         labels = node[end]
                         assert len(labels) == 1 # havent seen the overlap, but interested to see
-                        label = labels[0]
+                        if accept_labels is not None and labels[0] in accept_labels:
+                            label = labels[0]
                     else:
                         print("ERROR: Multi token words are not handled")
                 yield "%s\t%s" % (tok['word'], label)
