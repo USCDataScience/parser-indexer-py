@@ -36,7 +36,9 @@ class BratToNerConverter(object):
                     node = tree[begin]
                     if end in node:
                         labels = node[end]
-                        assert len(labels) == 1 # havent seen the overlap, but interested to see
+                        #assert len(labels) == 1 # havent seen the overlap, but interested to see
+                        if not len(labels) == 1:
+                            print("Duplicate: " + tok['word'])
                         if accept_labels is not None and labels[0] in accept_labels:
                             label = labels[0]
                     else:
@@ -46,7 +48,9 @@ class BratToNerConverter(object):
 
     def parse(self, txt_file, ann_file):
         with open(txt_file) as text_file, open(ann_file) as ann_file:
-            texts = text_file.read()
+            texts = text_file.read().decode('utf8') 
+            text_file.close()
+            #texts = text_file.read()
             anns = map(lambda x: x.strip().split('\t'), ann_file)
             anns = filter(lambda x: len(x) > 2, anns)
             # FIXME: ignoring the annotatiosn which are complex
@@ -58,7 +62,8 @@ class BratToNerConverter(object):
                 spec = ann[1].split()
                 name = spec[0]
                 markers = list(map(lambda x: int(x), spec[1:]))
-                t = ' '.join([texts[begin:end] for begin,end in zip(markers[::2], markers[1::2])])
+                #t = ' '.join([texts[begin:end] for begin,end in zip(markers[::2], markers[1::2])])
+                t = texts[markers[0]:markers[1]]
                 if not t == ann[2]:
                     print("Error: Annotation mis-match, file=%s, ann=%s" % (txt_file, str(ann)))
                     return None
@@ -76,6 +81,11 @@ class BratToNerConverter(object):
                 if end not in node:
                     node[end] = []
                 node[end].append(entity_type)
+
+            # Re-read file in without decoding it
+            text_file = open(txt_file)
+            texts = text_file.read()
+            text_file.close()
             return texts, tree
 
     def convert_all(self, input_paths, output):
