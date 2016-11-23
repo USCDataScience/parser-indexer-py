@@ -29,26 +29,42 @@ class BratToNerConverter(object):
         output = self.corenlp.annotate(text, properties=props)
         records = []
         for sentence in output['sentences']:
+            continue_ann, continue_ann_en = None, None
             for tok in sentence['tokens']:
-                begin, end = tok['characterOffsetBegin'], tok['characterOffsetEnd']
+                begin, tok_end = tok['characterOffsetBegin'], tok['characterOffsetEnd']
                 label = 'O'
                 if begin in tree:
                     node = tree[begin]
-                    if end in node:
-                        labels = node[end]
-                        #assert len(labels) == 1 # havent seen the overlap, but interested to see
-                        if not len(labels) == 1:
-                            print("Duplicate: " + tok['word'])
-                        if accept_labels is not None and labels[0] in accept_labels:
-                            label = labels[0]
-                    else:
-                        print("ERROR: Multi token words are not handled")
+                    if len(node) > 1:
+                        print("WARN: multiple starts at ", begin, node)
+                        if tok_end in node:
+                            node = {tok_end: node[tok_end]} # picking one
+                            print("Chose:", node)
+
+                    ann_end, labels = node.items()[0]
+                    if not len(labels) == 1:
+                        print("WARN: Duplicate labels for token: %s, label:%s. Using the first one!" % (tok['word'], str(labels)))
+                    if accept_labels is not None and labels[0] in accept_labels:
+                        label = labels[0]
+                    if tok_end == ann_end: # annotation ends where token ends
+                        continue_ann = None
+                    elif tok_end < ann_end and label != 'O':
+                        print("Continue for the next %d chars" % (ann_end - tok_end))
+                        continue_ann = label
+                        continue_ann_end = ann_end
+                elif continue_ann is not None and tok_end <= continue_ann_end:
+                    print("Continuing the annotation %s, %d:%d %d]" % (continue_ann, begin, tok_end, continue_ann_end))
+                    label = continue_ann            # previous label is this label
+                    if continue_ann_end == tok_end: # continuation ends here
+                        print("End")
+                        continue_ann = None
                 yield "%s\t%s" % (tok['word'], label)
-            yield "" # end of sentence
+            #yield "" # end of sentence
+        yield "" # end of document
 
     def parse(self, txt_file, ann_file):
         with open(txt_file) as text_file, open(ann_file) as ann_file:
-            texts = text_file.read().decode('utf8') 
+            texts = text_file.read().decode('utf8')
             text_file.close()
             #texts = text_file.read()
             anns = map(lambda x: x.strip().split('\t'), ann_file)
