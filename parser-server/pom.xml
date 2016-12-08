@@ -20,7 +20,7 @@
         <dependency>
             <groupId>org.apache.tika</groupId>
             <artifactId>tika-server</artifactId>
-            <version>1.13</version>
+            <version>1.14</version>
         </dependency>
         <dependency>
             <!-- If this jar is missing:
