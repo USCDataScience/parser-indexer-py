@@ -2,7 +2,6 @@ from __future__ import print_function
 
 from parser import *
 
-
 class JournalParser(Parser):
     """
     This class a specialized parser for parsing Journals which are in PDF format
@@ -25,8 +24,13 @@ class JournalParser(Parser):
         assert pdf_md['Content-Type'] == JournalParser._PDF_TYPE
         assert JournalParser._JOURNAL_PARSER in set(pdf_md['X-Parsed-By'])
 
-        content = parsed['content']
+        content = parsed['content'].strip()
+        parsed['content'] = content # stripped off the whitespaces
         assert type(content) == str or type(content) == unicode
+        self.parse_names(content, pdf_md)
+        return parsed
+
+    def parse_names(self, content, meta):
         # Named Entity Parsing
         # Assumption : NER parser is enabled for text/plain
         text_feats = tkparser.from_buffer(content)
@@ -38,7 +42,7 @@ class JournalParser(Parser):
             pdf_md[entity_type] = ner_md[entity_type]
         # Merged NER and Journal Parsers
         pdf_md['X-Parsed-By'].append(JournalParser._NER_PARSER)
-        return parsed
 
 if __name__ == '__main__':
-    main(JournalParser)
+    args = vars(CliParser(JournalParser).parse_args())
+    main(JournalParser, args)

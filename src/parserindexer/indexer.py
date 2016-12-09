@@ -3,6 +3,7 @@ from argparse import ArgumentParser
 from ioutils import read_jsonlines
 from solr import Solr
 import sys
+import string
 
 
 # basic map
@@ -15,17 +16,19 @@ md_map = {
     'NER_ORGANIZATION': ['organizations'],
     'NER_PHONENUMBER': ['phonenumbers'],
     'NER_EMAIL': ['emails']
-    # TODO: update this
 }
+
 # journals map
 grobid_map = {
-    'grobid:header_title_ts_md': 'title',
-    'dcterms:created_ts_md': 'createdAt',
-    'mdcterms:modified_ts_md': 'modifiedAt'
+    'dcterms:created_t_md': 'createdAt',
+    'mdcterms:modified_t_md': 'modifiedAt',
+    'grobid:header_title_t_md': 'title',
+    'grobid:header_authors_t_md': 'authors',
+    'grobid:header_affiliation_t_md': 'affiliations_ts_md'
 }
 
 
-def map_basic(doc):
+def map_basic(doc, noalter_prefix="ner"):
     res = {}
     md = doc['metadata']
     res['id'] = doc['file']
@@ -37,14 +40,17 @@ def map_basic(doc):
                 res[new_key] = src_val
             continue
 
-        # is it multivalued?
-        new_key = src_key.lower().replace(' ', '').strip()
-        multivalued = type(src_val) == list
+        new_key = src_key
+        if not src_key.startswith(noalter_prefix):
+            # is it multivalued?
+            new_key = src_key.lower().replace(' ', '').strip()
 
-        new_key += "_t"  # treat them as strings by default
-        if multivalued:
-            new_key += "s"   # plural for multi valued
-        new_key += "_md"
+            multivalued = type(src_val) == list
+
+            new_key += "_t"  # treat them as strings by default
+            if multivalued:
+                new_key += "s"   # plural for multi valued
+            new_key += "_md"
         res[new_key] = src_val
 
     parts = res['contentType'].split('/')
@@ -57,11 +63,38 @@ def map_basic(doc):
 
 def map_journal(doc):
     res = map_basic(doc)
-
     for src, target in grobid_map.items():
         if src in res:
             res[target] = res[src]
             del res[src]
+
+    # nested documents in solr
+    children = []
+    # shorter Id instead of full path
+    p_id = '/'.join(res['id'].split("/")[-2:])
+    res['id'] = p_id
+    res['type'] = 'doc'
+    res['_path'] = '/'
+    res['_depth'] = 0
+    if 'ner' in res:
+        names = res['ner']
+        del res['ner']
+        for i, name in enumerate(names):
+            label = name['label'].lower()
+            child = {
+                'id': '%s_%d' % (p_id, i),
+                'name': name['text'],
+                'type': label,
+                'span_start': name['begin'],
+                'span_end': name['end'],
+                '_path': '/%s' % label,
+                '_depth': 1,
+                }
+            children.append(child)
+    if children:
+        res['_childDocuments_'] = children
+    res['title'] = string.capwords(res.get('title', ''))
+    return res
 
 schema_map = {
     'basic': map_basic,
