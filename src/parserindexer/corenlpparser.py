@@ -37,7 +37,8 @@ class CoreNLPParser(JournalParser):
                     'label': token['ner'],
                     'begin': token['characterOffsetBegin'],
                     'end': token['characterOffsetEnd'],
-                    'text': token['originalText']
+                    'text': token['originalText'],
+                    'source': 'corenlp'
                 }
                 names.append(name)
         if names:
