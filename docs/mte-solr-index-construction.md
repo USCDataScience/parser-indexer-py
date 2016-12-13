@@ -134,3 +134,29 @@ python indexer.py -i parsed-tika-grobid-corenlp.jl -u
 NOTE:
 Option `-u` will update the documents (thus it preserves the brat annotations which were previously added).
  Not specifying this option will overwrite the documents.
+
+
+# Index Analyst's notebook targets:
+
+In this step, we use `csvindexer.py` to index the csv file.
+### Usage
+```
+usage: csvindexer.py [-h] [-v] -i IN [-s SOLR_URL] -t TYPE [-if ID_FIELD]
+
+This tool can index CSV files to solr.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -v, --version         show program's version number and exit
+  -i IN, --in IN        Path to input csv file (default: None)
+  -s SOLR_URL, --solr-url SOLR_URL
+                        Solr URL (default: http://localhost:8983/solr/docs)
+  -t TYPE, --type TYPE  document type (default: None)
+  -if ID_FIELD, --id-field ID_FIELD
+                        ID field (default: None)
+```
+
+Example:
+```
+python csvindexer.py  -i .../ref/2016-0816-MSL-AN-Target-table.csv -t AN_target
+```

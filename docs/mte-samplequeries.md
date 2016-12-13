@@ -1,6 +1,7 @@
 # Solr Query Examples for Mars Target Encyclopedia index
 
 
+
 ## Sample Queries
 
 
@@ -46,10 +47,12 @@
   ```
 
 ---
+
 ## Facets
 +  Get Statistics about annotation types:
 `http://localhost:8983/solr/docs/query?rows=0&q=_depth:1&facet=true&facet.field=type`
- ```json
+
+```json
  "type": [
 "element",
 3329,
@@ -68,7 +71,7 @@
 + Statistics about annotation types from corenlp annotations only:
 `http://localhost:8983/solr/docs/query?rows=0&q=_depth:1%20AND%20source:corenlp&facet=true&facet.field=type&facet.limit=5`
 
-+ Stats for target annoations from CoreNLP
++ Stats for target annotations from CoreNLP
 `http://localhost:8983/solr/docs/query?rows=0&q=_depth:1%20AND%20source:corenlp%20AND%20type:target&facet=true&facet.field=name&facet.limit=5`
 ```json
 "name": [
