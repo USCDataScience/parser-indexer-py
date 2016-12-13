@@ -1,6 +1,7 @@
 # Solr Query Examples for Mars Target Encyclopedia index
 
-
+This document provides sample queries for Mars Target Encyclopedia Index
+The schema file can be seen in [../conf/solr/docs/conf/managed-schema](../conf/solr/docs/conf/managed-schema)
 
 ## Sample Queries
 
@@ -54,42 +55,41 @@
 
 ```json
  "type": [
-"element",
-3329,
-"mineral",
-1090,
-"target",
-1015,
-"contains",
-332,
-"shows",
-202
-]
-...
-]```
+    "element",
+    3329,
+    "mineral",
+    1090,
+    "target",
+    1015,
+    "contains",
+    332,
+    "shows",
+    202
+  ]
+```
 
 + Statistics about annotation types from corenlp annotations only:
 `http://localhost:8983/solr/docs/query?rows=0&q=_depth:1%20AND%20source:corenlp&facet=true&facet.field=type&facet.limit=5`
 
 + Stats for target annotations from CoreNLP
 `http://localhost:8983/solr/docs/query?rows=0&q=_depth:1%20AND%20source:corenlp%20AND%20type:target&facet=true&facet.field=name&facet.limit=5`
+
 ```json
 "name": [
-"Windjana",
-87,
-"Stephen",
-47,
-"Cumberland",
-25,
-"Dillinger",
-25,
-"Darwin",
+  "Windjana",
+  87,
+  "Stephen",
+  47,
+  "Cumberland",
+  25,
+  "Dillinger",
+  25,
+  "Darwin",
 24
 ]
 ```
 
 More reference here https://cwiki.apache.org/confluence/display/solr/Faceting
-
 
 ---
 # Free text search
