@@ -1,6 +1,7 @@
 from solr import Solr
 import os, sys
 from argparse import ArgumentParser
+from indexer import parse_lpsc_from_path
 
 class BratAnnIndexer():
 
@@ -62,7 +63,10 @@ class BratAnnIndexer():
         with open(in_file) as inp:
             for line in inp: # assumption: input file is a csv having .txt,.ann paths
                 txt_f, ann_f = line.strip().split(',')
-                doc_id = ann_f.split('/')[-1].replace('.ann', '')
+                doc_id, doc_year, doc_url = parse_lpsc_from_path(ann_f)
+                if doc_id:
+                    ann_f.split('/')[-1].replace('.ann', '')
+
                 with open(txt_f) as txtp:
                     txt = txtp.read()
                 with open(ann_f) as annp:
@@ -75,7 +79,9 @@ class BratAnnIndexer():
                     'id' : doc_id,
                     'content_ann_s': txt,
                     '_childDocuments_' : children,
-                    'type': 'doc'
+                    'type': 'doc',
+                    'url' : doc_url,
+                    'year': doc_year
                 }
 
     def index(self, solr_url, in_file):

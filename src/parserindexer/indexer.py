@@ -5,7 +5,7 @@ from ioutils import read_jsonlines
 from solr import Solr
 import sys
 import string
-
+import re
 
 # basic map
 md_map = {
@@ -28,6 +28,19 @@ grobid_map = {
     'grobid:header_affiliation_t_md': 'affiliations_ts_md'
 }
 
+lpsc_pattern = re.compile(".*lpsc[-_/]?([0-9]*).*/([0-9]+)\.(?:pdf|ann|txt)", re.I)
+def parse_lpsc_from_path(path_str):
+    '''
+        Constructs ID and LPSC URL from path string
+    '''
+    m = lpsc_pattern.match(path_str)
+    if m:
+        year, lpscid = m.groups()
+        doc_id = "lpsc%s-%s" % (year, lpscid)
+        doc_url = "http://www.hou.usra.edu/meetings/lpsc20%s/pdf/%s.pdf" % (year, lpscid)
+        year = (0 if len(year) > 3 else 2000 ) + int(year) # convert "15" to 2015
+        return doc_id, year, doc_url
+    return None, None
 
 def map_basic(doc, noalter_prefix="ner"):
     res = {}
@@ -72,9 +85,11 @@ def map_journal(doc):
     # nested documents in solr
     children = []
     # shorter Id instead of full path
-    p_id = res['id'].split("/")[-1].replace(".pdf", '')
+    p_id, doc_year, doc_url = parse_lpsc_from_path(res['id'])
     res['id'] = p_id
     res['type'] = 'doc'
+    res['url'] = doc_url
+    res['year'] = doc_year
     res['_path'] = '/'
     res['_depth'] = 0
     if 'ner' in res:
