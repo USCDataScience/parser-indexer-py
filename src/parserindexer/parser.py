@@ -1,6 +1,8 @@
 from __future__ import print_function
 
+import argparse
 from argparse import ArgumentParser
+
 from tika import parser as tkparser
 from ioutils import read_lines, dump_jsonlines
 import os, sys, traceback
@@ -46,8 +48,10 @@ class Parser(object):
 class CliParser(ArgumentParser):
     def __init__(self, parser_class):
         # Step : Parse CLI args
-        super(CliParser, self).__init__(prog=parser_class.__name__, description="This tool can parse files.",
-                                version="1.0")
+        super(CliParser, self).__init__(prog=parser_class.__name__,
+            description="This tool can parse files.",
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+            version="1.0")
         input_args = self.add_mutually_exclusive_group(required=True)
         input_args.add_argument("-i", "--in", help="Path to Input File.")
         input_args.add_argument("-li", "--list", help="Path to a text file which contains list of input file paths")
