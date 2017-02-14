@@ -83,6 +83,17 @@ class Solr(object):
             res = self.post_items(buffer, commit=commit, softCommit=softCommit)
         return num_docs, res
 
+    def get(self, doc_id, **kwargs):
+        '''
+            Gets a document given its id.
+            returns None when item not found
+        '''
+        resp = self.query(query='id:"%s"' % doc_id, rows=1, **kwargs)
+        if resp:
+            if resp.get('response') and resp['response'].get('numFound', 0) > 0:
+                return resp['response']['docs'][0]
+        return None
+
     def commit(self):
         """
         Commit index

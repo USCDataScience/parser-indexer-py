@@ -43,7 +43,7 @@ class BratToNerConverter(object):
                         if tok_end in node:
                             node = {tok_end: node[tok_end]} # picking one
                             print("Chose:", node)
-                                                
+
                     ann_end, labels = node.items()[0]
                     if not len(labels) == 1:
                         print("WARN: Duplicate labels for token: %s, label:%s. Using the first one!" % (tok['word'], str(labels)))
@@ -68,7 +68,7 @@ class BratToNerConverter(object):
 
     def parse(self, txt_file, ann_file):
         with open(txt_file) as text_file, open(ann_file) as ann_file:
-            texts = text_file.read().decode('utf8') 
+            texts = text_file.read().decode('utf8')
             text_file.close()
             #texts = text_file.read()
             anns = map(lambda x: x.strip().split('\t'), ann_file)

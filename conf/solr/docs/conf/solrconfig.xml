@@ -1240,13 +1240,14 @@
     -->
   <searchComponent name="suggest" class="solr.SuggestComponent">
     <lst name="suggester">
-      <str name="name">mySuggester</str>
+      <str name="name">nameSuggester</str>
       <str name="lookupImpl">FuzzyLookupFactory</str>      
       <str name="dictionaryImpl">DocumentDictionaryFactory</str>
-      <str name="field">cat</str>
+      <str name="field">name</str>
       <str name="weightField">price</str>
-      <str name="suggestAnalyzerFieldType">string</str>
-      <str name="buildOnStartup">false</str>
+      <str name="suggestAnalyzerFieldType">text_general</str>
+      <str name="buildOnStartup">true</str>
+      
     </lst>
   </searchComponent>
 
@@ -1254,7 +1255,8 @@
                   startup="lazy" >
     <lst name="defaults">
       <str name="suggest">true</str>
-      <str name="suggest.count">10</str>
+      <str name="suggest.count">20</str>
+      <str name="suggest.dictionary">nameSuggester</str>
     </lst>
     <arr name="components">
       <str>suggest</str>
