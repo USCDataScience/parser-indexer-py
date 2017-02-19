@@ -39,9 +39,9 @@ class JournalParser(Parser):
 
         ner_keys = filter(lambda x: x.startswith('NER_'), ner_md.keys())
         for entity_type in ner_keys:
-            pdf_md[entity_type] = ner_md[entity_type]
+            meta[entity_type] = ner_md[entity_type]
         # Merged NER and Journal Parsers
-        pdf_md['X-Parsed-By'].append(JournalParser._NER_PARSER)
+        meta['X-Parsed-By'].append(JournalParser._NER_PARSER)
 
 if __name__ == '__main__':
     args = vars(CliParser(JournalParser).parse_args())
