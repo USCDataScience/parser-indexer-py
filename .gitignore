@@ -99,3 +99,9 @@ ENV/
 
 # Output files
 .jsonl
+
+# Mac OSX
+.DS_Store
+
+# IntelliJ
+.idea/

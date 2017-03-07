@@ -5,7 +5,7 @@ from argparse import ArgumentParser
 
 from tika import parser as tkparser
 from ioutils import read_lines, dump_jsonlines
-import os, sys, traceback
+import os, sys, traceback, re
 
 
 class Parser(object):
@@ -41,8 +41,50 @@ class Parser(object):
         :return: parsed content
         """
         parsed = tkparser.from_file(path)
+        content = parsed['content']
+
+        # Extract references from the parsed content
+        references = self.extract_references(content)
+
+        # Remove references from the parsed content
+        for ref_id in references:
+            content = content.replace(references[ref_id], '')
+        parsed['content'] = content
+
+        if references:
+            parsed['metadata']['references'] = references.values()
         parsed['file'] = os.path.abspath(path)
         return parsed
+
+    def extract_references(self, content):
+        """
+        Extract references from text
+        :param content: text
+        :return: dictionary of references with reference id ([N]) as key
+        """
+        references = {}
+        content = content.replace("\n", "\\n")
+        matches = re.findall('(\[[0-9]+\][^\[]*?(?=\[|Acknowledge|Fig|Table|Conclusion|pdf))', content)
+        if matches:
+            for match in matches:
+                ref_id = self.get_reference_id(match)
+                # No reference id exist -- skip it
+                if ref_id != -1:
+                    value = match.replace('\\n', '\n')
+                    references[ref_id] = value
+        return references
+
+    def get_reference_id(self, reference):
+        """
+        Extract reference id ([N])
+        :param reference: Any possible reference
+        :return: reference id
+        """
+        ref_id = -1
+        match = re.search('\[[0-9]+\]', reference)
+        if match:
+            ref_id = int(match.group(0).strip('[]'))
+        return ref_id
 
 
 class CliParser(ArgumentParser):
