@@ -48,11 +48,11 @@ class Parser(object):
 
         # Remove references from the parsed content
         for ref_id in references:
-            content = content.replace(references[ref_id], '')
+            content = content.replace(references[ref_id], ' ' * len(references[ref_id]))
         parsed['content'] = content
 
         if references:
-            parsed['metadata']['references'] = references.values()
+            parsed['reference'] = references.values()
         parsed['file'] = os.path.abspath(path)
         return parsed
 
