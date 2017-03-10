@@ -129,6 +129,9 @@
       tokens
     -->
     <field name="id" type="string" indexed="true" stored="true" required="true" multiValued="false"/>
+    <!-- Parent Id -->
+    <field name="p_id" type="string" indexed="true" stored="true" multiValued="false"/>
+    
 
     <!-- Common metadata fields, named specifically to match up with
       SolrCell metadata when parsing rich documents such as Word, PDF.

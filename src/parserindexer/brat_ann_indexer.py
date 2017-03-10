@@ -74,15 +74,17 @@ class BratAnnIndexer():
                     children = []
                     for i, ann in enumerate(filter(lambda x: x is not None, anns)):
                         ann['id'] = '%s_%s_%s_%d' % (doc_id, ann['source'], ann['type'], i)
+                        ann['p_id'] = doc_id
                         children.append(ann)
                 yield {
                     'id' : doc_id,
-                    'content_ann_s': txt,
-                    '_childDocuments_' : children,
-                    'type': 'doc',
-                    'url' : doc_url,
-                    'year': doc_year
+                    'content_ann_s': {'set': txt},
+                    'type': {'set': 'doc'},
+                    'url' : {'set': doc_url},
+                    'year': {'set': doc_year}
                 }
+                for child in children:
+                    yield child
 
     def index(self, solr_url, in_file):
         solr = Solr(solr_url)

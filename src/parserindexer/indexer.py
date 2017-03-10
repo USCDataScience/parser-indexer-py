@@ -72,18 +72,22 @@ def map_basic(doc, noalter_prefix="ner"):
     res['subType'] = parts[1]
 
     # TODO: detects int, float, date
-    return res
+    return [res]
 
+def flatmap_journal(doc):
+    """
+    Maps schema of document and expands children documents into
+    sub sequent documents
+    """
 
-def map_journal(doc):
-    res = map_basic(doc)
+    res = map_basic(doc)[0]
     for src, target in grobid_map.items():
         if src in res:
             res[target] = res[src]
             del res[src]
 
     # nested documents in solr
-    children = []
+    children = [res]
     # shorter Id instead of full path
     p_id, doc_year, doc_url = parse_lpsc_from_path(res['id'])
     res['id'] = p_id
@@ -99,6 +103,7 @@ def map_journal(doc):
             label = name['label'].lower()
             child = {
                 'id': '%s_%s_%d' % (p_id, label, i),
+                'p_id': p_id,
                 'name': name['text'],
                 'type': label,
                 'source': name.get('source', 'corenlp'),
@@ -108,8 +113,7 @@ def map_journal(doc):
                 '_depth': 1,
                 }
             children.append(child)
-    if children:
-        res['_childDocuments_'] = children
+
     if res.get('title'):
         res['title'] = string.capwords(res.get('title', ''))
     else:
@@ -118,9 +122,7 @@ def map_journal(doc):
         res['primaryauthor'] = get_primary_author(res['authors'])
     else:
         res['authors'], res['primaryauthor'] = 'Unknown', 'Unknown'
-    return res
-
-
+    return children
 
 def get_primary_author(au):
     '''
@@ -144,29 +146,10 @@ def get_primary_author(au):
 
 schema_map = {
     'basic': map_basic,
-    'journal': map_journal
+    'journal': flatmap_journal
 }
 
-def index(solr, docs, update):
-    if update:
-        print("Updating documents")
-        def update_doc(new_doc):
-            # NOTE: solr doesnt perform atomic updates on nested documents
-            #       So, we prepare the updated document at the client side and then reindex it
-            #       https://issues.apache.org/jira/browse/SOLR-6596
-            old_doc = solr.get(new_doc['id'], fl="*,[child parentFilter=type:doc limit=10000]")
-            if old_doc:
-                if '_childDocuments_' in old_doc:
-                    if not '_childDocuments_' in new_doc:
-                        new_doc['_childDocuments_'] = []
-                    new_doc['_childDocuments_'].extend(old_doc['_childDocuments_'])
-                if 'content_ann_s' in old_doc:
-                    new_doc['content_ann_s'] = old_doc['content_ann_s']
-            else:
-                print("WARN: Doc doesnt exists in index so no update performed for %s" % new_doc['id'])
-            return new_doc
-        docs = map(update_doc, docs)
-
+def index(solr, docs):
     count, succeeded = solr.post_iterator(docs, commit=True, buffer_size=20)
     if succeeded:
         print("Indexed %d docs." % count)
@@ -184,7 +167,6 @@ def main():
     parser.add_argument("-s", "--solr-url", help="URL of Solr core.", default="http://localhost:8983/solr/docs")
     parser.add_argument("-sc", "--schema", help="Schema Mapping to be used. Options:\n%s" % schema_map.keys(),
                         default='journal')
-    parser.add_argument("-u", "--update", action="store_true", help="Update documents in the index", default=False)
     args = vars(parser.parse_args())
     if args['schema'] not in schema_map:
         print("Error: %s  schema is unknown. Known options: %s" % (args['schema'], schema_map.keys()))
@@ -194,10 +176,17 @@ def main():
     docs = read_jsonlines(args['in'])
     # map to schema
     docs = map(schema_mapper, docs)
+
+    def merge_lists(docs):
+        for docgroup in docs:
+            for doc in docgroup:
+                yield doc
+
+    docs = merge_lists(docs)
+
     # send to solr
     solr = Solr(args['solr_url'])
-    index(solr, docs, args['update'])
-
+    index(solr, docs)
 
 if __name__ == '__main__':
     main()
