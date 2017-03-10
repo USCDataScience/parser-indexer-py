@@ -72,10 +72,33 @@ class BratAnnIndexer():
                 with open(ann_f) as annp:
                     anns = list(map(self.parse_ann_line, annp.readlines()))
                     children = []
-                    for i, ann in enumerate(filter(lambda x: x is not None, anns)):
-                        ann['id'] = '%s_%s_%s_%d' % (doc_id, ann['source'], ann['type'], i)
+                    index = {}
+                    for ann in filter(lambda x: x is not None, anns):
+                        ann_id = ann['annotation_id_s']
+                        ann['id'] = '%s_%s_%s_%s' % (doc_id, ann['source'], ann['type'], ann_id)
                         ann['p_id'] = doc_id
+                        index[ann_id] = ann
                         children.append(ann)
+
+                    # resolve references from Events to Targets and Contains
+                    contains = filter(lambda a: a.get('mainType') == 'event'\
+                                    and a.get('type') == 'contains', children)
+                    for ch in contains:
+                        targets_anns = ch['targets_ss']
+                        cont_anns = ch['cont_ss']
+                        ch['target_ids_ss'] = []
+                        ch['cont_ids_ss'] = []
+                        ch['target_names_ss'] = []
+                        ch['cont_names_ss'] = []
+                        for tg_ann in targets_anns:
+                            ch['target_ids_ss'].append('%s_%s_%s_%s' % (doc_id, ch['source'], 'target', tg_ann))
+                            if tg_ann in index:
+                                ch['target_names_ss'].append(index[tg_ann]['name'])
+                        for con_ann in cont_anns:
+                            ch['cont_ids_ss'].append('%s_%s_%s_%s' % (doc_id, ch['source'], 'material', con_ann))
+                            if con_ann in index:
+                                ch['cont_names_ss'].append(index[con_ann]['name'])
+
                 yield {
                     'id' : doc_id,
                     'content_ann_s': {'set': txt},
