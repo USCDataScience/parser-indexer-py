@@ -72,17 +72,39 @@ class BratAnnIndexer():
                 with open(ann_f) as annp:
                     anns = list(map(self.parse_ann_line, annp.readlines()))
                     children = []
-                    for i, ann in enumerate(filter(lambda x: x is not None, anns)):
-                        ann['id'] = '%s_%s_%s_%d' % (doc_id, ann['source'], ann['type'], i)
+                    index = {}
+                    for ann in filter(lambda x: x is not None, anns):
+                        ann_id = ann['annotation_id_s']
+                        ann['id'] = '%s_%s_%s_%s' % (doc_id, ann['source'], ann['type'], ann_id)
+                        ann['p_id'] = doc_id
+                        index[ann_id] = ann
                         children.append(ann)
+
+                    for ch in children:
+                        if 'anchor_s' in ch and ch['anchor_s'] in index:
+                            anc_doc = index[ch['anchor_s']]
+                            
+
+
+                    # resolve references from Events to Targets and Contains
+                    contains = filter(lambda a: a.get('mainType') == 'event'\
+                                    and a.get('type') == 'contains', children)
+                    for ch in contains:
+                        targets_anns = ch.get('targets_ss', [])
+                        cont_anns = ch.get('cont_ss', [])
+                        ch['target_ids_ss'] = list(map(lambda t: index[t]['id'], targets_anns))
+                        ch['target_names_ss'] = list(map(lambda t: index[t]['name'], targets_anns))
+                        ch['cont_ids_ss'] = list(map(lambda c: index[c]['id'], cont_anns))
+                        ch['cont_names_ss'] = list(map(lambda c: index[c]['name'], cont_anns))
                 yield {
                     'id' : doc_id,
-                    'content_ann_s': txt,
-                    '_childDocuments_' : children,
-                    'type': 'doc',
-                    'url' : doc_url,
-                    'year': doc_year
+                    'content_ann_s': {'set': txt},
+                    'type': {'set': 'doc'},
+                    'url' : {'set': doc_url},
+                    'year': {'set': doc_year}
                 }
+                for child in children:
+                    yield child
 
     def index(self, solr_url, in_file):
         solr = Solr(solr_url)

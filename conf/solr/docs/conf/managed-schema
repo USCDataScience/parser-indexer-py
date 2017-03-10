@@ -130,6 +130,9 @@
     -->
     <field name="id" type="string" indexed="true" stored="true" required="true" multiValued="false"/>
 
+    <!-- Parent Id -->
+    <field name="p_id" type="string" indexed="true" stored="true" multiValued="false"/>
+    
     <!-- Common metadata fields, named specifically to match up with
       SolrCell metadata when parsing rich documents such as Word, PDF.
       Some fields are multiValued only because Tika currently may return
@@ -170,7 +173,6 @@
     <!-- Targets_mmgis table -->
     <field name="target_lat" type="double" stored="true" indexed="true"/>
     <field name="target_long" type="double" stored="true" indexed="true"/>
-
 
     <field name="description" type="text_general" stored="true" indexed="true"/>
     <field name="keywords" type="string" stored="true" indexed="true" multiValued="true"/>
@@ -248,7 +250,13 @@
     <dynamicField name="*_l" type="long" indexed="true" stored="true"/>
     <dynamicField name="*_ls" type="long" indexed="true" stored="true" multiValued="true"/>
     <dynamicField name="*_t" type="text_general" indexed="true" stored="true"/>
+
     <dynamicField name="*_txt" type="text_general" indexed="true" stored="true" multiValued="true"/>
+    <dynamicField name="*_ts" type="text_general" indexed="true" stored="true" multiValued="true"/>
+
+    <dynamicField name="*_tio" type="text_general" indexed="true" stored="false"/>     <!-- text indexed only -->    
+    <dynamicField name="*_tios" type="text_general" indexed="true" stored="false" multiValued="true"/>  <!-- Text indexed only plural-->
+    
     <dynamicField name="*_en" type="text_en" indexed="true" stored="true" multiValued="true"/>
     <dynamicField name="*_b" type="boolean" indexed="true" stored="true"/>
     <dynamicField name="*_bs" type="boolean" indexed="true" stored="true" multiValued="true"/>
@@ -357,6 +365,8 @@
 
     <copyField source="*_s" dest="text"/>
     <copyField source="*_ss" dest="text"/>
+    <copyField source="*_s" dest="*_tio"/>
+    <copyField source="*_ss" dest="*_tios"/>    
     <copyField source="*_t" dest="text"/>
     <copyField source="*_ts" dest="text"/>
     <copyField source="*_i" dest="text"/>
