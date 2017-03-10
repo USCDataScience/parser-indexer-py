@@ -80,25 +80,22 @@ class BratAnnIndexer():
                         index[ann_id] = ann
                         children.append(ann)
 
+                    for ch in children:
+                        if 'anchor_s' in ch and ch['anchor_s'] in index:
+                            anc_doc = index[ch['anchor_s']]
+                            
+
+
                     # resolve references from Events to Targets and Contains
                     contains = filter(lambda a: a.get('mainType') == 'event'\
                                     and a.get('type') == 'contains', children)
                     for ch in contains:
-                        targets_anns = ch['targets_ss']
-                        cont_anns = ch['cont_ss']
-                        ch['target_ids_ss'] = []
-                        ch['cont_ids_ss'] = []
-                        ch['target_names_ss'] = []
-                        ch['cont_names_ss'] = []
-                        for tg_ann in targets_anns:
-                            ch['target_ids_ss'].append('%s_%s_%s_%s' % (doc_id, ch['source'], 'target', tg_ann))
-                            if tg_ann in index:
-                                ch['target_names_ss'].append(index[tg_ann]['name'])
-                        for con_ann in cont_anns:
-                            ch['cont_ids_ss'].append('%s_%s_%s_%s' % (doc_id, ch['source'], 'material', con_ann))
-                            if con_ann in index:
-                                ch['cont_names_ss'].append(index[con_ann]['name'])
-
+                        targets_anns = ch.get('targets_ss', [])
+                        cont_anns = ch.get('cont_ss', [])
+                        ch['target_ids_ss'] = list(map(lambda t: index[t]['id'], targets_anns))
+                        ch['target_names_ss'] = list(map(lambda t: index[t]['name'], targets_anns))
+                        ch['cont_ids_ss'] = list(map(lambda c: index[c]['id'], cont_anns))
+                        ch['cont_names_ss'] = list(map(lambda c: index[c]['name'], cont_anns))
                 yield {
                     'id' : doc_id,
                     'content_ann_s': {'set': txt},
