@@ -2,8 +2,13 @@ from solr import Solr
 import os, sys
 from argparse import ArgumentParser
 from indexer import parse_lpsc_from_path
+import re
 
 class BratAnnIndexer():
+    '''
+    This class reads/parses brat annotations from file system and indexes them
+    into Solr.
+    '''
 
     def parse_ann_line(self, ann_line):
         '''
@@ -19,8 +24,8 @@ class BratAnnIndexer():
             res.update({
                 'mainType': 'anchor',
                 'type': parts[1].split()[0],
-                'span_start': args[0],
-                'span_end': args[-1],
+                'span_start': int(args[0]),
+                'span_end': int(args[-1]),
                 'name': parts[2]
             })
         elif parts[0][0] == 'E': # event
@@ -59,11 +64,45 @@ class BratAnnIndexer():
         res['_depth'] = 1
         return res
 
+    def extract_excerpt(self, content, ann):
+        '''
+        Extracts excerpt of an annotation from content
+        @param content - text content of document
+        @param ann annotation having span_start and span_end
+        @return excerpt text
+        '''
+        (anchor_start, anchor_end)= ann['span_start'], ann['span_end']
+
+        # Start: first capital letter after last period before last capital letter!
+        sent_start = 0
+        # Last preceding capital
+        m = [m for m in re.finditer('[A-Z]',content[:anchor_start])]
+        if m:
+            sent_start = m[-1].start()
+        # Last preceding period
+        sent_start = max(content[:sent_start].rfind('.'), 0)
+        # Next capital
+        m = re.search('[A-Z]',content[sent_start:])
+        if m:
+            sent_start = sent_start + m.start()
+        # End: next period followed by {space,newline}, or end of document.
+        sent_end     = anchor_end + content[anchor_end:].find('. ')+1
+        if sent_end <= anchor_end:
+            sent_end = anchor_end + content[anchor_end:].find('.\n')+1
+        if sent_end <= anchor_end:
+            sent_end = len(content)
+        return content[sent_start:sent_end]
+
     def read_records(self, in_file):
+        '''
+        Reads brat annotations as solr input documents
+        @param in_file Input CSV file having text file and annotation file paths
+        '''
         with open(in_file) as inp:
             for line in inp: # assumption: input file is a csv having .txt,.ann paths
                 txt_f, ann_f = line.strip().split(',')
                 doc_id, doc_year, doc_url = parse_lpsc_from_path(ann_f)
+                venue = "LPSC-%d" % doc_year
                 if doc_id:
                     ann_f.split('/')[-1].replace('.ann', '')
 
@@ -72,19 +111,13 @@ class BratAnnIndexer():
                 with open(ann_f) as annp:
                     anns = list(map(self.parse_ann_line, annp.readlines()))
                     children = []
-                    index = {}
+                    index = {} # index all annotations by its ids
                     for ann in filter(lambda x: x is not None, anns):
                         ann_id = ann['annotation_id_s']
                         ann['id'] = '%s_%s_%s_%s' % (doc_id, ann['source'], ann['type'], ann_id)
                         ann['p_id'] = doc_id
                         index[ann_id] = ann
                         children.append(ann)
-
-                    for ch in children:
-                        if 'anchor_s' in ch and ch['anchor_s'] in index:
-                            anc_doc = index[ch['anchor_s']]
-                            
-
 
                     # resolve references from Events to Targets and Contains
                     contains = filter(lambda a: a.get('mainType') == 'event'\
@@ -96,17 +129,26 @@ class BratAnnIndexer():
                         ch['target_names_ss'] = list(map(lambda t: index[t]['name'], targets_anns))
                         ch['cont_ids_ss'] = list(map(lambda c: index[c]['id'], cont_anns))
                         ch['cont_names_ss'] = list(map(lambda c: index[c]['name'], cont_anns))
+                        # extract excerpt from anchor annotation
+                        anc_doc = index[ch['anchor_s']]
+                        ch['excerpt_t'] = self.extract_excerpt(txt, anc_doc)
                 yield {
                     'id' : doc_id,
                     'content_ann_s': {'set': txt},
                     'type': {'set': 'doc'},
                     'url' : {'set': doc_url},
-                    'year': {'set': doc_year}
+                    'year': {'set': doc_year},
+                    'venue': {'set': venue}
                 }
                 for child in children:
                     yield child
 
     def index(self, solr_url, in_file):
+        '''
+        Reads annotations at the specified path and indexes them to solr
+        @param solr_url Target Solr URL to index
+        @param in_file CSV file having text file and annotation file paths
+        '''
         solr = Solr(solr_url)
         recs = self.read_records(in_file)
         count, success, = solr.post_iterator(recs)
