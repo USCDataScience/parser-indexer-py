@@ -155,7 +155,7 @@
     <field name="authors_ss" type="string" stored="false" indexed="true" multiValued="true"/>
     <field name="primaryauthor" type="text_general" stored="true" indexed="true"/>
     <field name="affiliations" type="text_general" stored="true" indexed="true" multiValued="true"/>
-    <field name="venue" type="text_general" stored="true" indexed="true"/>
+    <field name="venue" type="string" stored="true" indexed="true"/>
     <field name="year" type="int" stored="true" indexed="true"/>
     <field name="url" type="string" indexed="true" stored="true"/>
     <field name="content" type="text_general" stored="true" indexed="true"/>
@@ -348,6 +348,10 @@
     <copyField source="cities" dest="text"/>
     <copyField source="states" dest="text"/>
     <copyField source="countries" dest="text"/>
+    <copyField source="venue" dest="text"/>
+    
+    <copyField source="venue" dest="venue_tio"/>
+    
 
     <!-- Dynamic fields copied to text field-->
     <copyField source="*_s_md" dest="text"/>
