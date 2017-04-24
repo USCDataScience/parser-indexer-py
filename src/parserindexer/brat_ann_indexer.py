@@ -93,6 +93,36 @@ class BratAnnIndexer():
             sent_end = len(content)
         return content[sent_start:sent_end]
 
+    def extract_references(self, content):
+        """
+        Extract references from text
+        :param content: text
+        :return: dictionary of references with reference id ([N]) as key
+        """
+        references = {}
+        content = content.replace("\n", "\\n")
+        matches = re.findall('(\[[0-9]+\][^\[]*?(?=\[|Acknowledge|Fig|Table|Conclusion|pdf))', content)
+        if matches:
+            for match in matches:
+                ref_id = self.get_reference_id(match)
+                # No reference id exist -- skip it
+                if ref_id != -1:
+                    value = match.replace('\\n', '\n')
+                    references[ref_id] = value
+        return references
+
+    def get_reference_id(self, reference):
+        """
+        Extract reference id ([N])
+        :param reference: Any possible reference
+        :return: reference id
+        """
+        ref_id = -1
+        match = re.search('\[[0-9]+\]', reference)
+        if match:
+            ref_id = int(match.group(0).strip('[]'))
+        return ref_id
+
     def read_records(self, in_file):
         '''
         Reads brat annotations as solr input documents
@@ -132,11 +162,20 @@ class BratAnnIndexer():
                         # extract excerpt from anchor annotation
                         anc_doc = index[ch['anchor_s']]
                         ch['excerpt_t'] = self.extract_excerpt(txt, anc_doc)
+
+                # Extract references
+                references = self.extract_references(txt)
+
+                # Remove references from the content
+                for ref_id in references:
+                    txt = txt.replace(references[ref_id], ' ' * len(references[ref_id]))
+
                 yield {
                     'id' : doc_id,
                     'content_ann_s': {'set': txt},
+                    'reference_ss': {'set': references.values()},
                     'type': {'set': 'doc'},
-                    'url' : {'set': doc_url},
+                    'url': {'set': doc_url},
                     'year': {'set': doc_year},
                     'venue': {'set': venue}
                 }

@@ -159,6 +159,7 @@
     <field name="year" type="int" stored="true" indexed="true"/>
     <field name="url" type="string" indexed="true" stored="true"/>
     <field name="content" type="text_general" stored="true" indexed="true"/>
+    <field name="reference_ss" type="text_general" stored="true" indexed="true" multiValued="true"/>
 
     <!-- Targets table -->
     <field name="name" type="string" indexed="true" stored="true"/>
