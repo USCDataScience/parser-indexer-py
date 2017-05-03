@@ -6,6 +6,7 @@ from solr import Solr
 import sys
 import string
 import re
+from utils import canonical_name
 
 # basic map
 md_map = {
