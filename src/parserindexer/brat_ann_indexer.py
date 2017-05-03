@@ -174,7 +174,7 @@ class BratAnnIndexer():
                 yield {
                     'id' : doc_id,
                     'content_ann_s': {'set': txt},
-                    'reference_ss': {'set': references.values()},
+                    'references': {'set': references.values()},
                     'type': {'set': 'doc'},
                     'url': {'set': doc_url},
                     'year': {'set': doc_year},
