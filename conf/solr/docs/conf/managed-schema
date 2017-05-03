@@ -165,10 +165,6 @@
     <field name="name" type="string" indexed="true" stored="true"/>
     <field name="name_ts" type="text_general" indexed="true" stored="false"/>
     <field name="can_name" type="string" indexed="true" stored="true"/>
-    <field name="target_name" type="text_general" indexed="true" stored="true"/>
-    <field name="target_can_name" type="string" indexed="true" stored="true"/>
-    <field name="target_id" type="int" stored="true" indexed="true"/>
-    <field name="target_first_sol" type="int" stored="true" indexed="true"/>
     <field name="span_start" type="int" indexed="false" stored="true"/>
     <field name="span_end" type="int" indexed="false" stored="true"/>
 
