@@ -132,7 +132,7 @@
 
     <!-- Parent Id -->
     <field name="p_id" type="string" indexed="true" stored="true" multiValued="false"/>
-    
+
     <!-- Common metadata fields, named specifically to match up with
       SolrCell metadata when parsing rich documents such as Word, PDF.
       Some fields are multiValued only because Tika currently may return
@@ -163,6 +163,7 @@
     <!-- Targets table -->
     <field name="name" type="string" indexed="true" stored="true"/>
     <field name="name_ts" type="text_general" indexed="true" stored="false"/>
+    <field name="can_name" type="string" indexed="true" stored="true"/>
     <field name="target_name" type="text_general" indexed="true" stored="true"/>
     <field name="target_can_name" type="string" indexed="true" stored="true"/>
     <field name="target_id" type="int" stored="true" indexed="true"/>
@@ -254,9 +255,9 @@
     <dynamicField name="*_txt" type="text_general" indexed="true" stored="true" multiValued="true"/>
     <dynamicField name="*_ts" type="text_general" indexed="true" stored="true" multiValued="true"/>
 
-    <dynamicField name="*_tio" type="text_general" indexed="true" stored="false"/>     <!-- text indexed only -->    
+    <dynamicField name="*_tio" type="text_general" indexed="true" stored="false"/>     <!-- text indexed only -->
     <dynamicField name="*_tios" type="text_general" indexed="true" stored="false" multiValued="true"/>  <!-- Text indexed only plural-->
-    
+
     <dynamicField name="*_en" type="text_en" indexed="true" stored="true" multiValued="true"/>
     <dynamicField name="*_b" type="boolean" indexed="true" stored="true"/>
     <dynamicField name="*_bs" type="boolean" indexed="true" stored="true" multiValued="true"/>
@@ -349,9 +350,9 @@
     <copyField source="states" dest="text"/>
     <copyField source="countries" dest="text"/>
     <copyField source="venue" dest="text"/>
-    
+
     <copyField source="venue" dest="venue_tio"/>
-    
+
 
     <!-- Dynamic fields copied to text field-->
     <copyField source="*_s_md" dest="text"/>
@@ -370,7 +371,7 @@
     <copyField source="*_s" dest="text"/>
     <copyField source="*_ss" dest="text"/>
     <copyField source="*_s" dest="*_tio"/>
-    <copyField source="*_ss" dest="*_tios"/>    
+    <copyField source="*_ss" dest="*_tios"/>
     <copyField source="*_t" dest="text"/>
     <copyField source="*_ts" dest="text"/>
     <copyField source="*_i" dest="text"/>
