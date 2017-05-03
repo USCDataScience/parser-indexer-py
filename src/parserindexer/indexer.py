@@ -105,6 +105,7 @@ def flatmap_journal(doc):
                 'id': '%s_%s_%d' % (p_id, label, i),
                 'p_id': p_id,
                 'name': name['text'],
+                'can_name': canonical_name(name['text']),
                 'type': label,
                 'source': name.get('source', 'corenlp'),
                 'span_start': name['begin'],
