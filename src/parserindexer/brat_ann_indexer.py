@@ -3,6 +3,7 @@ import os, sys
 from argparse import ArgumentParser
 from indexer import parse_lpsc_from_path
 import re
+from utils import canonical_name
 
 class BratAnnIndexer():
     '''
@@ -141,6 +142,8 @@ class BratAnnIndexer():
                     'venue': {'set': venue}
                 }
                 for child in children:
+                    if 'name' in child:
+                        child['can_name'] = canonical_name(child['name'])
                     yield child
 
     def index(self, solr_url, in_file):
