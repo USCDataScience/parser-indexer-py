@@ -129,7 +129,7 @@ def canonical_name(name):
     :return canonical name
     """
     name = name.strip()
-    if name in symtab:
-        return symtab[name]
+    if len(name) <= 3 and name.title() in symtab:
+        return symtab[name.title()]
     else:
         return re.sub(r"[\s_-]+", " ", name).title().replace(' ', '_')
