@@ -183,6 +183,10 @@ class BratAnnIndexer():
                 for child in children:
                     if 'name' in child:
                         child['can_name'] = canonical_name(child['name'])
+                    if 'target_names_ss' in child:
+                        child['target_names_ss'] = map(canonical_name, child['target_names_ss'])
+                    if 'cont_names_ss' in child:
+                        child['cont_names_ss'] = map(canonical_name, child['cont_names_ss'])
                     yield child
 
     def index(self, solr_url, in_file):
