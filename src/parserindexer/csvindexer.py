@@ -74,7 +74,7 @@ def main():
     description="This tool can index CSV files to solr.",
     formatter_class=argparse.ArgumentDefaultsHelpFormatter, version="1.0")
     ap.add_argument('-i', '--in', help="Path to input csv file", required=True)
-    ap.add_argument('-s', '--solr-url', help="Solr URL", default="http://localhost:8983/solr/docs")
+    ap.add_argument('-s', '--solr-url', help="Solr URL", default="http://localhost:8983/solr/docsdev")
     ap.add_argument('-t', '--type', help="document type", required=True)
     ap.add_argument('-if', '--id-field', help="ID field")
     args = vars(ap.parse_args())

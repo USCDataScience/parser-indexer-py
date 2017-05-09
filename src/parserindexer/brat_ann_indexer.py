@@ -207,6 +207,6 @@ class BratAnnIndexer():
 if __name__ == '__main__':
     ap = ArgumentParser()
     ap.add_argument('-i', '--in', help="Path to input csv file having .txt,.ann records", required=True)
-    ap.add_argument('-s', '--solr-url', help="Solr URL", default="http://localhost:8983/solr/docs")
+    ap.add_argument('-s', '--solr-url', help="Solr URL", default="http://localhost:8983/solr/docsdev")
     args = vars(ap.parse_args())
     BratAnnIndexer().index(solr_url=args['solr_url'], in_file = args['in'])

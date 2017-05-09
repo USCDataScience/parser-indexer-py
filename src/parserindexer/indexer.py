@@ -166,7 +166,7 @@ def main():
                             version="1.0")
 
     parser.add_argument("-i", "--in", help="Path to Input JSON line file.", required=True)
-    parser.add_argument("-s", "--solr-url", help="URL of Solr core.", default="http://localhost:8983/solr/docs")
+    parser.add_argument("-s", "--solr-url", help="URL of Solr core.", default="http://localhost:8983/solr/docsdev")
     parser.add_argument("-sc", "--schema", help="Schema Mapping to be used. Options:\n%s" % schema_map.keys(),
                         default='journal')
     args = vars(parser.parse_args())
