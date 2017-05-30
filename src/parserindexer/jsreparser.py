@@ -6,6 +6,7 @@ import os, subprocess
 
 
 class JsreParser(object):
+    JSRE_PARSER = "org.itc.irst.tcc.sre.Predict"
 
     def __init__(self, **kwargs):
         self.jsre = kwargs['jsre']
@@ -23,7 +24,9 @@ class JsreParser(object):
 
     def predict(self, in_file, out_file):
         self.set_classpath()
+        #print(os.environ['CLASSPATH'])
         cmd = ['java', '-mx256M', 'org.itc.irst.tcc.sre.Predict', in_file, self.jsre_model, out_file]
+        #print(cmd)
         FNULL = open(os.devnull, 'w')
         subprocess.call(cmd, stdout=FNULL, stderr=subprocess.STDOUT)
         FNULL.close()

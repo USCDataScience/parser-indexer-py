@@ -37,18 +37,17 @@ class ParseAll(CoreNLPParser):
                                                  entity_label)
         # Output the example
         example = '%s\t%s\t%s\n' % (label, id, body)
-        print (example)
         return example
 
     def generate_examples(self, targets, active, relations, examples, ex_id, sentence, fnbase):
         for i in range(0, len(targets)):
             for j in range(0, len(active)):
-                label = -1
+                label = 0
                 # Create a unique identifier
                 id = self.generate_example_id(fnbase, sentence['index'], ex_id)
                 ex_id += 1
                 example = self.generate_example(id, label, sentence, targets[i]['index'], active[j]['index'])
-                relations.append([targets[i], active[j]])
+                relations.append([targets[i], active[j], sentence])
                 examples.append(example)
         return relations, examples, ex_id
 
@@ -63,45 +62,75 @@ class ParseAll(CoreNLPParser):
         fnbase = fn[:fn.find('.pdf')]
         ex_mineral_id = 0
         ex_element_id = 0
+        print('Parsing %d sentences.' % len(parsed['metadata']['sentences']))
         for s in parsed['metadata']['sentences']:
             # For each pair of target+(element|mineral) entities,
             # are they in a contains relationship?
-            # label:
-            # 0 - negative
-            # 1 - entity_1 contains entity_2
-            # 2 - entity_2 contains entity_1
             # Get the relevant entities (Target, Element, Mineral)
             targets = [t for t in s['tokens'] if t['ner'] == 'Target']
             minerals = [t for t in s['tokens'] if t['ner'] == 'Mineral']
             elements = [t for t in s['tokens'] if t['ner'] == 'Element']
-            target_mineral, example_mineral, ex_mineral_id = self.generate_examples(targets, minerals, target_mineral,
-                                                                                    example_mineral, ex_mineral_id,
-                                                                                    s, fnbase)
-            target_element, example_element, ex_element_id = self.generate_examples(targets, elements, target_element,
-                                                                                    example_element, ex_element_id,
-                                                                                    s, fnbase)
-
-        with io.open('tmp_mineral', 'w', encoding='utf8') as out:
-            for example in example_mineral:
-                out.write(example)
+            target_mineral, example_mineral, ex_mineral_id = \
+                    self.generate_examples(targets, minerals, target_mineral,
+                                           example_mineral, ex_mineral_id,
+                                           s, fnbase)
+            target_element, example_element, ex_element_id = \
+                    self.generate_examples(targets, elements, target_element,
+                                           example_element, ex_element_id,
+                                           s, fnbase)
+        #with io.open('tmp_mineral', 'w', encoding='utf8') as out:
+        #    for example in example_mineral:
+        #        out.write(example)
         with io.open('tmp_element', 'w', encoding='utf8') as out:
             for example in example_element:
                 out.write(example)
+            out.close()
 
         # Call jSRE extraction
-        self.jsre_parser.predict('tmp_mineral', 'tmp_mineral_out')
+        #self.jsre_parser.predict('tmp_mineral', 'tmp_mineral_out')
         self.jsre_parser.predict('tmp_element', 'tmp_element_out')
 
-        # TODO: Read results from jSRE Output files; Dependent on how to consume in Solr
-        # TODO: Add jSRE output in parsed; Dependent on the previous step; Map the results with target_mineral/target_element lists
+        # TODO: Read results from jSRE output files 
+        rel = []
+        with io.open('tmp_element_out', 'r') as inf:
+            lines = inf.readlines()
+            for (l,ex) in zip(lines, target_element):
+                # If the label is non-zero, then it's a relationship
+                # 0 - negative
+                # 1 - entity_1 contains entity_2
+                # 2 - entity_2 contains entity_1
+                label = float(l)
+                if label > 0.0:
+                    print('%f: target %s, element %s' % (label, 
+                                                         ex[0]['word'], 
+                                                         ex[1]['word']))
+                    # To store in Solr:
+                    cont = {
+                        'label': 'contains',  # also stored as 'type'
+                        # target_names_ss (list), cont_names_ss (list)
+                        'target_names': [ex[0]['word']],
+                        'cont_names':   [ex[1]['word']],
+                        # excerpt_t (sentence)
+                        'sentence': ' '.join([t['originalText'] for t in ex[2]['tokens']]),
+                        # source: 'corenlp' (later, change to 'jsre')
+                        'source': 'corenlp',
+                    }
+                    rel.append(cont)
+
+                    
+        print('-----------------')
+        if rel:
+            print('Adding relations.')
+            parsed['metadata']['rel'] = rel
 
         # Remove tmp files
-        os.remove('tmp_mineral')
-        os.remove('tmp_mineral_out')
+        #os.remove('tmp_mineral')
+        #os.remove('tmp_mineral_out')
         os.remove('tmp_element')
         os.remove('tmp_element_out')
 
         # Return parsed
+        parsed['metadata']['X-Parsed-By'].append(JsreParser.JSRE_PARSER)
         return parsed
 
 

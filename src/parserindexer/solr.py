@@ -40,7 +40,7 @@ class Solr(object):
             headers=self.headers)
 
         if not resp or resp.status_code != 200:
-            print('Solr posting failed')
+            print('Solr posting failed:', resp)
             return False
         return True
 
