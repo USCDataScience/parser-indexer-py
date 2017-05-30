@@ -78,56 +78,55 @@ class ParseAll(CoreNLPParser):
                     self.generate_examples(targets, elements, target_element,
                                            example_element, ex_element_id,
                                            s, fnbase)
-        #with io.open('tmp_mineral', 'w', encoding='utf8') as out:
-        #    for example in example_mineral:
-        #        out.write(example)
-        with io.open('tmp_element', 'w', encoding='utf8') as out:
-            for example in example_element:
-                out.write(example)
-            out.close()
 
-        # Call jSRE extraction
-        #self.jsre_parser.predict('tmp_mineral', 'tmp_mineral_out')
-        self.jsre_parser.predict('tmp_element', 'tmp_element_out')
+        for (jsre_fn, examples, relations) in \
+            [('tmp_mineral', example_mineral, target_mineral),
+             ('tmp_element', example_element, target_element)]:
 
-        # TODO: Read results from jSRE output files 
-        rel = []
-        with io.open('tmp_element_out', 'r') as inf:
-            lines = inf.readlines()
-            for (l,ex) in zip(lines, target_element):
-                # If the label is non-zero, then it's a relationship
-                # 0 - negative
-                # 1 - entity_1 contains entity_2
-                # 2 - entity_2 contains entity_1
-                label = float(l)
-                if label > 0.0:
-                    print('%f: target %s, element %s' % (label, 
-                                                         ex[0]['word'], 
-                                                         ex[1]['word']))
-                    # To store in Solr:
-                    cont = {
-                        'label': 'contains',  # also stored as 'type'
-                        # target_names_ss (list), cont_names_ss (list)
-                        'target_names': [ex[0]['word']],
-                        'cont_names':   [ex[1]['word']],
-                        # excerpt_t (sentence)
-                        'sentence': ' '.join([t['originalText'] for t in ex[2]['tokens']]),
-                        # source: 'corenlp' (later, change to 'jsre')
-                        'source': 'corenlp',
-                    }
-                    rel.append(cont)
+            # Set up the jSRE example file
+            with io.open(jsre_fn, 'w', encoding='utf8') as out:
+                for example in examples:
+                    out.write(example)
+                out.close()
 
+            # Call jSRE extraction (prediction)
+            self.jsre_parser.predict(jsre_fn, jsre_fn + '_out')
+
+            # Read results from jSRE output files 
+            rel = []
+            with io.open(jsre_fn + '_out', 'r') as inf:
+                lines = inf.readlines()
+                for (l,ex) in zip(lines, relations):
+                    # If the label is non-zero, then it's a relationship
+                    # 0 - negative
+                    # 1 - entity_1 contains entity_2
+                    # 2 - entity_2 contains entity_1
+                    label = float(l)
+                    if label > 0.0:
+                        print('%f: target %s, component %s' % (label, 
+                                                               ex[0]['word'], 
+                                                               ex[1]['word']))
+                        # To store in Solr:
+                        cont = {
+                            'label': 'contains',  # also stored as 'type'
+                            # target_names_ss (list), cont_names_ss (list)
+                            'target_names': [ex[0]['word']],
+                            'cont_names':   [ex[1]['word']],
+                            # excerpt_t (sentence)
+                            'sentence': ' '.join([t['originalText'] for \
+                                                  t in ex[2]['tokens']]),
+                            # source: 'corenlp' (later, change to 'jsre')
+                            'source': 'corenlp',
+                        }
+                        rel.append(cont)
+
+            # Remove tmp files
+            os.remove(jsre_fn)
+            os.remove(jsre_fn + '_out')
                     
-        print('-----------------')
         if rel:
             print('Adding relations.')
             parsed['metadata']['rel'] = rel
-
-        # Remove tmp files
-        #os.remove('tmp_mineral')
-        #os.remove('tmp_mineral_out')
-        os.remove('tmp_element')
-        os.remove('tmp_element_out')
 
         # Return parsed
         parsed['metadata']['X-Parsed-By'].append(JsreParser.JSRE_PARSER)
