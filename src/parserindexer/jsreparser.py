@@ -13,19 +13,21 @@ class JsreParser(object):
         self.jsre_model = kwargs['jsre_model']
 
     def set_classpath(self):
-        os.environ['CLASSPATH'] = os.path.join(self.jsre, 'dist/xjsre.jar') + ':' + \
-                                  os.path.join(self.jsre, 'lib/commons-beanutils.jar') + ':' + \
-                                  os.path.join(self.jsre, 'lib/commons-cli-1.0.jar') + ':' + \
-                                  os.path.join(self.jsre, 'lib/commons-collections.jar') + ':' + \
-                                  os.path.join(self.jsre, 'lib/commons-digester.jar') + ':' + \
-                                  os.path.join(self.jsre, 'lib/commons-logging.jar') + ':' + \
-                                  os.path.join(self.jsre, 'lib/libsvm-2.8.jar') + ':' + \
-                                  os.path.join(self.jsre, 'lib/log4j-1.2.8.jar')
+        jars = [ 'dist/xjsre.jar', 'lib/commons-beanutils.jar', 
+                 'lib/commons-cli-1.0.jar', 'lib/commons-collections.jar',  
+                 'lib/commons-digester.jar', 'lib/commons-logging.jar',  
+                 'lib/libsvm-2.8.jar', 'lib/log4j-1.2.8.jar']
+
+        os.environ['CLASSPATH'] = ':'.join(map(lambda x: 
+                                               os.path.join(self.jsre, x), 
+                                               jars))
+
 
     def predict(self, in_file, out_file):
         self.set_classpath()
         #print(os.environ['CLASSPATH'])
-        cmd = ['java', '-mx256M', 'org.itc.irst.tcc.sre.Predict', in_file, self.jsre_model, out_file]
+        cmd = ['java', '-mx256M', self.JSRE_PARSER, in_file, 
+               self.jsre_model, out_file]
         #print(cmd)
         FNULL = open(os.devnull, 'w')
         subprocess.call(cmd, stdout=FNULL, stderr=subprocess.STDOUT)
