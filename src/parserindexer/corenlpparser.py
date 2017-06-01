@@ -44,6 +44,7 @@ class CoreNLPParser(JournalParser):
         if names:
             meta['ner'] = names
             meta['X-Parsed-By'].append(CoreNLPParser.CORENLP_PARSER)
+        meta['sentences'] = output['sentences']
         return meta
 
 if __name__ == '__main__':

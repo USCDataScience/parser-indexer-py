@@ -43,20 +43,30 @@ def parse_lpsc_from_path(path_str):
         return doc_id, year, doc_url
     return None, None
 
-def map_basic(doc, noalter_prefix="ner"):
+
+# KW: indexer.py isn't handling the 'sentences' field correctly;
+# Solr ingestion fails.  I'm not sure we need it.  
+# So for now, omitting it.
+def map_basic(doc, noalter_prefix=["ner","rel"], nomap_prefix=["sentences"]):
     res = {}
     md = doc['metadata']
     res['id'] = doc['file']
     res['content'] = doc.get('content'),
 
     for src_key, src_val in md.items():
+        # Skip over any fields we don't need in Solr
+        if src_key in nomap_prefix:
+            continue
+
         if src_key in md_map:
             for new_key in md_map[src_key]:
                 res[new_key] = src_val
             continue
 
+        # Update names of fields allow the schema to handle them
+        # automatically (includes type info)
         new_key = src_key
-        if not src_key.startswith(noalter_prefix):
+        if not src_key in noalter_prefix:
             # is it multivalued?
             new_key = src_key.lower().replace(' ', '').strip()
 
@@ -87,17 +97,21 @@ def flatmap_journal(doc):
             res[target] = res[src]
             del res[src]
 
-    # nested documents in solr
+    # create a list of documents for Solr, starting with the document itself
     children = [res]
     # shorter Id instead of full path
     p_id, doc_year, doc_url = parse_lpsc_from_path(res['id'])
+    print('Indexing %s from %s,\n  URL = %s' % (p_id, doc_year, doc_url))
     res['id'] = p_id
     res['type'] = 'doc'
     res['url'] = doc_url
     res['year'] = doc_year
     res['_path'] = '/'
     res['_depth'] = 0
+
+    # add each NER annotation as a document for Solr
     if 'ner' in res:
+        print('Indexing named entities.')
         names = res['ner']
         del res['ner']
         for i, name in enumerate(names):
@@ -111,6 +125,26 @@ def flatmap_journal(doc):
                 'source': name.get('source', 'corenlp'),
                 'span_start': name['begin'],
                 'span_end': name['end'],
+                '_path': '/%s' % label,
+                '_depth': 1,
+                }
+            children.append(child)
+
+    # add each JSRE relation annotation as a document for Solr
+    if 'rel' in res:
+        print('Indexing relations.')
+        rels = res['rel']
+        del res['rel']
+        for i, rel in enumerate(rels):
+            label = rel['label'].lower()
+            child = {
+                'id': '%s_%s_%d' % (p_id, label, i),
+                'p_id': p_id,
+                'type': label,
+                'source': rel.get('source', 'jsre'),
+                'target_names_ss': rel['target_names'],
+                'cont_names_ss':   rel['cont_names'],
+                'excerpt_t': rel['sentence'],
                 '_path': '/%s' % label,
                 '_depth': 1,
                 }
@@ -151,10 +185,10 @@ schema_map = {
     'journal': flatmap_journal
 }
 
-def index(solr, docs):
+def index(solr, docs, n_docs):
     count, succeeded = solr.post_iterator(docs, commit=True, buffer_size=20)
     if succeeded:
-        print("Indexed %d docs." % count)
+        print("Indexed %d Solr docs from %d docs." % (count, n_docs))
     else:
         print("Error: Failed after %d docs. Please debug and start again" % count)
 
@@ -184,11 +218,11 @@ def main():
             for doc in docgroup:
                 yield doc
 
-    docs = merge_lists(docs)
+    docs_solr = merge_lists(docs)
 
     # send to solr
     solr = Solr(args['solr_url'])
-    index(solr, docs)
+    index(solr, docs_solr, len(docs))
 
 if __name__ == '__main__':
     main()
