@@ -62,7 +62,8 @@ class ParseAll(CoreNLPParser):
         fnbase = fn[:fn.find('.pdf')]
         ex_mineral_id = 0
         ex_element_id = 0
-        print('Parsing %d sentences.' % len(parsed['metadata']['sentences']))
+        print('%s: Parsing %d sentences.' % \
+              (fn, len(parsed['metadata']['sentences'])))
         for s in parsed['metadata']['sentences']:
             # For each pair of target+(element|mineral) entities,
             # are they in a contains relationship?
