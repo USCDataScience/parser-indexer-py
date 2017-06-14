@@ -97,6 +97,7 @@ class ParseAll(CoreNLPParser):
             rel = []
             with io.open(jsre_fn + '_out', 'r') as inf:
                 lines = inf.readlines()
+                n_cand = len(lines)
                 for (l,ex) in zip(lines, relations):
                     # If the label is non-zero, then it's a relationship
                     # 0 - negative
@@ -104,9 +105,9 @@ class ParseAll(CoreNLPParser):
                     # 2 - entity_2 contains entity_1
                     label = float(l)
                     if label > 0.0:
-                        print('%f: target %s, component %s' % (label, 
-                                                               ex[0]['word'], 
-                                                               ex[1]['word']))
+                        #print('%f: target %s, component %s' % (label, 
+                        #                                       ex[0]['word'], 
+                        #                                       ex[1]['word']))
                         # To store in Solr:
                         cont = {
                             'label': 'contains',  # also stored as 'type'
@@ -120,14 +121,20 @@ class ParseAll(CoreNLPParser):
                             'source': 'corenlp',
                         }
                         rel.append(cont)
+            n_rel = len(rel)
+            print('  Extracted %d target-%s relations, from %d candidates.' % \
+                  (n_rel, 
+                   jsre_fn[4:],
+                   n_cand))
 
             # Remove tmp files
             os.remove(jsre_fn)
             os.remove(jsre_fn + '_out')
                     
         if rel:
-            print('Adding relations.')
             parsed['metadata']['rel'] = rel
+
+        sys.stdout.flush()
 
         # Return parsed
         parsed['metadata']['X-Parsed-By'].append(JsreParser.JSRE_PARSER)
