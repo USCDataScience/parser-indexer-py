@@ -117,7 +117,8 @@ def flatmap_journal(doc):
         for i, name in enumerate(names):
             label = name['label'].lower()
             child = {
-                'id': '%s_%s_%d' % (p_id, label, i),
+                'id': '%s_%s_%d_%d' % (p_id, label, 
+                                       name['begin'], name['end']),
                 'p_id': p_id,
                 'name': name['text'],
                 'can_name': canonical_name(name['text']),
@@ -132,7 +133,7 @@ def flatmap_journal(doc):
 
     # add each JSRE relation annotation as a document for Solr
     if 'rel' in res:
-        print('Indexing relations.')
+        print('Indexing %d relations.' % len(res['rel']))
         rels = res['rel']
         del res['rel']
         for i, rel in enumerate(rels):
@@ -144,6 +145,7 @@ def flatmap_journal(doc):
                 'source': rel.get('source', 'jsre'),
                 'target_names_ss': rel['target_names'],
                 'cont_names_ss':   rel['cont_names'],
+                'cont_ids_ss': [p_id + '_' + id for id in rel['cont_ids']],
                 'excerpt_t': rel['sentence'],
                 '_path': '/%s' % label,
                 '_depth': 1,

@@ -10,7 +10,6 @@ class JsreParser(object):
 
     def __init__(self, **kwargs):
         self.jsre = kwargs['jsre']
-        self.jsre_model = kwargs['jsre_model']
 
     def set_classpath(self):
         jars = [ 'dist/xjsre.jar', 'lib/commons-beanutils.jar', 
@@ -23,11 +22,11 @@ class JsreParser(object):
                                                jars))
 
 
-    def predict(self, in_file, out_file):
+    def predict(self, jsre_model, in_file, out_file):
         self.set_classpath()
         #print(os.environ['CLASSPATH'])
         cmd = ['java', '-mx256M', self.JSRE_PARSER, in_file, 
-               self.jsre_model, out_file]
+               jsre_model, out_file]
         #print(cmd)
         FNULL = open(os.devnull, 'w')
         subprocess.call(cmd, stdout=FNULL, stderr=subprocess.STDOUT)

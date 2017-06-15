@@ -4,6 +4,7 @@ from parser import *
 from corenlpparser import *
 from jsreparser import JsreParser
 import io, ntpath
+from utils import canonical_name
 
 
 class ParseAll(CoreNLPParser):
@@ -11,10 +12,11 @@ class ParseAll(CoreNLPParser):
     def __init__(self, **kwargs):
         super(ParseAll, self).__init__(**kwargs)
         self.jsre_parser = JsreParser(**kwargs)
+        self.jsre_model = kwargs['jsre_model']
 
-    def generate_example_id(self, fnbase, index, ex_id):
+    def generate_example_id(self, fnbase, index, ex_ind):
         # Create a unique identifier
-        return '%s_%s_%s' % (fnbase, str(index), str(ex_id))
+        return '%s_%s_%s' % (fnbase, str(index), str(ex_ind))
 
     def generate_example(self, id, label, sentence, target_index, active_index):
         body = ''
@@ -39,29 +41,32 @@ class ParseAll(CoreNLPParser):
         example = '%s\t%s\t%s\n' % (label, id, body)
         return example
 
-    def generate_examples(self, targets, active, relations, examples, ex_id, sentence, fnbase):
+    def generate_examples(self, targets, active, relations, examples, 
+                          ex_ind, sentence, fnbase):
         for i in range(0, len(targets)):
             for j in range(0, len(active)):
                 label = 0
                 # Create a unique identifier
-                id = self.generate_example_id(fnbase, sentence['index'], ex_id)
-                ex_id += 1
-                example = self.generate_example(id, label, sentence, targets[i]['index'], active[j]['index'])
+                id = self.generate_example_id(fnbase, sentence['index'], ex_ind)
+                ex_ind += 1
+                example = self.generate_example(id, label, sentence, 
+                                                targets[i]['index'], 
+                                                active[j]['index'])
                 relations.append([targets[i], active[j], sentence])
                 examples.append(example)
-        return relations, examples, ex_id
+        return relations, examples, ex_ind
+
 
     def parse_file(self, path):
         parsed = super(ParseAll, self).parse_file(path)
-        # Build jSRE example - creates tmp_mineral and tmp_element file
-        target_mineral = []
-        example_mineral = []
-        target_element = []
-        example_element = []
+
+        # Build jSRE examples
+        (rel_target_element, jsre_ex_element) = ([], [])
+        (rel_target_mineral, jsre_ex_mineral) = ([], [])
+        (ex_ind_element, ex_ind_mineral) = (0, 0) 
+
         fn = ntpath.basename(path)
         fnbase = fn[:fn.find('.pdf')]
-        ex_mineral_id = 0
-        ex_element_id = 0
         print('%s: Parsing %d sentences.' % \
               (fn, len(parsed['metadata']['sentences'])))
         for s in parsed['metadata']['sentences']:
@@ -71,18 +76,23 @@ class ParseAll(CoreNLPParser):
             targets = [t for t in s['tokens'] if t['ner'] == 'Target']
             minerals = [t for t in s['tokens'] if t['ner'] == 'Mineral']
             elements = [t for t in s['tokens'] if t['ner'] == 'Element']
-            target_mineral, example_mineral, ex_mineral_id = \
-                    self.generate_examples(targets, minerals, target_mineral,
-                                           example_mineral, ex_mineral_id,
+            rel_target_element, jsre_ex_element, ex_ind_element = \
+                    self.generate_examples(targets, elements, 
+                                           rel_target_element,
+                                           jsre_ex_element, 
+                                           ex_ind_element,
                                            s, fnbase)
-            target_element, example_element, ex_element_id = \
-                    self.generate_examples(targets, elements, target_element,
-                                           example_element, ex_element_id,
+            rel_target_mineral, jsre_ex_mineral, ex_ind_mineral = \
+                    self.generate_examples(targets, minerals, 
+                                           rel_target_mineral,
+                                           jsre_ex_mineral, 
+                                           ex_ind_mineral,
                                            s, fnbase)
 
+        total_rel = []
         for (jsre_fn, examples, relations) in \
-            [('tmp_mineral', example_mineral, target_mineral),
-             ('tmp_element', example_element, target_element)]:
+            [('tmp_element', jsre_ex_element, rel_target_element),
+             ('tmp_mineral', jsre_ex_mineral, rel_target_mineral)]:
 
             # Set up the jSRE example file
             with io.open(jsre_fn, 'w', encoding='utf8') as out:
@@ -91,10 +101,11 @@ class ParseAll(CoreNLPParser):
                 out.close()
 
             # Call jSRE extraction (prediction)
-            self.jsre_parser.predict(jsre_fn, jsre_fn + '_out')
+            self.jsre_parser.predict(self.jsre_model + jsre_fn[4:] + '.model',
+                                     jsre_fn, jsre_fn + '_out')
 
-            # Read results from jSRE output files 
             rel = []
+            # Read results from jSRE output files 
             with io.open(jsre_fn + '_out', 'r') as inf:
                 lines = inf.readlines()
                 n_cand = len(lines)
@@ -112,8 +123,13 @@ class ParseAll(CoreNLPParser):
                         cont = {
                             'label': 'contains',  # also stored as 'type'
                             # target_names_ss (list), cont_names_ss (list)
-                            'target_names': [ex[0]['word']],
-                            'cont_names':   [ex[1]['word']],
+                            'target_names': [canonical_name(ex[0]['word'])],
+                            'cont_names':   [canonical_name(ex[1]['word'])],
+                            # cont_ids_ss (list) 
+                            # - p_id prepended in indexer.py
+                            'cont_ids': ['%s_%d_%d' % (ex[1]['ner'].lower(),
+                                    ex[1]['characterOffsetBegin'],
+                                    ex[1]['characterOffsetEnd'])],
                             # excerpt_t (sentence)
                             'sentence': ' '.join([t['originalText'] for \
                                                   t in ex[2]['tokens']]),
@@ -126,13 +142,14 @@ class ParseAll(CoreNLPParser):
                   (n_rel, 
                    jsre_fn[4:],
                    n_cand))
+            total_rel += rel
 
             # Remove tmp files
             os.remove(jsre_fn)
             os.remove(jsre_fn + '_out')
                     
-        if rel:
-            parsed['metadata']['rel'] = rel
+        if total_rel:
+            parsed['metadata']['rel'] = total_rel
 
         sys.stdout.flush()
 
@@ -146,6 +163,6 @@ if __name__ == '__main__':
     cli_p.add_argument('-c', '--corenlp-url', help="CoreNLP Server URL", default="http://localhost:9000")
     cli_p.add_argument('-n', '--ner-model', help="Path (on Server side) to NER model ", required=False)
     cli_p.add_argument("-j", "--jsre", help="Path to jSRE installation directory.", required=True)
-    cli_p.add_argument("-m", "--jsre-model", help="Path to jSRE model.", required=True)
+    cli_p.add_argument("-m", "--jsre-model", help="Base path to jSRE models.", required=True)
     args = vars(cli_p.parse_args())
     main(ParseAll, args)
