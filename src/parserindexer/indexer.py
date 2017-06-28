@@ -6,7 +6,7 @@ from solr import Solr
 import sys
 import string
 import re
-from utils import canonical_name
+from utils import canonical_name, canonical_target_name
 
 # basic map
 md_map = {
@@ -121,7 +121,8 @@ def flatmap_journal(doc):
                                        name['begin'], name['end']),
                 'p_id': p_id,
                 'name': name['text'],
-                'can_name': canonical_name(name['text']),
+                'can_name': canonical_target_name(name['text']) 
+                if label == 'target' else canonical_name(name['text']),
                 'type': label,
                 'source': name.get('source', 'corenlp'),
                 'span_start': name['begin'],

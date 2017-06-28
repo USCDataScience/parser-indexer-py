@@ -133,3 +133,13 @@ def canonical_name(name):
         return symtab[name.title()]
     else:
         return re.sub(r"[\s_-]+", " ", name).title().replace(' ', '_')
+
+
+def canonical_target_name(name):
+    """
+    Gets canonical target name
+    :param name - name whose canonical name is to be looked up
+    :return canonical name
+    """
+    name = name.strip()
+    return re.sub(r"[\s_-]+", " ", name).title().replace(' ', '_')

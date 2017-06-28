@@ -4,7 +4,7 @@ from parser import *
 from corenlpparser import *
 from jsreparser import JsreParser
 import io, ntpath
-from utils import canonical_name
+from utils import canonical_name, canonical_target_name
 
 
 class ParseAll(CoreNLPParser):
@@ -123,7 +123,7 @@ class ParseAll(CoreNLPParser):
                         cont = {
                             'label': 'contains',  # also stored as 'type'
                             # target_names_ss (list), cont_names_ss (list)
-                            'target_names': [canonical_name(ex[0]['word'])],
+                            'target_names': [canonical_target_name(ex[0]['word'])],
                             'cont_names':   [canonical_name(ex[1]['word'])],
                             # cont_ids_ss (list) 
                             # - p_id prepended in indexer.py

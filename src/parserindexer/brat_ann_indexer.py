@@ -184,7 +184,7 @@ class BratAnnIndexer():
                     if 'name' in child:
                         child['can_name'] = canonical_name(child['name'])
                     if 'target_names_ss' in child:
-                        child['target_names_ss'] = map(canonical_name, child['target_names_ss'])
+                        child['target_names_ss'] = map(canonical_target_name, child['target_names_ss'])
                     if 'cont_names_ss' in child:
                         child['cont_names_ss'] = map(canonical_name, child['cont_names_ss'])
                     yield child
