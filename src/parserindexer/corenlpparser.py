@@ -45,6 +45,7 @@ class CoreNLPParser(JournalParser):
         # Handle multi-word tokens:
         # Merge any adjacent Target tokens, if of the same type and 
         # separated by a space, into one span.
+        names.sort(key=lambda x: int(x['begin']))
         new_names = []
         skip_names = []
         for n in names:
@@ -68,7 +69,7 @@ class CoreNLPParser(JournalParser):
             print('%d -> %d NERs' % (len(names), len(new_names)))
 
         if names:
-            meta['ner'] = names
+            meta['ner'] = new_names
             meta['X-Parsed-By'].append(CoreNLPParser.CORENLP_PARSER)
         meta['sentences'] = output['sentences']
         return meta
