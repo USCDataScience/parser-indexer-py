@@ -41,6 +41,32 @@ class CoreNLPParser(JournalParser):
                     'source': 'corenlp'
                 }
                 names.append(name)
+
+        # Handle multi-word tokens:
+        # Merge any adjacent Target tokens, if of the same type and 
+        # separated by a space, into one span.
+        new_names = []
+        skip_names = []
+        for n in names:
+            if n in skip_names:
+                continue
+            next_name = [n2 for n2 in names if \
+                         n['label'] == 'Target' and
+                         n2['label'] == n['label'] and
+                         int(n2['begin']) == int(n['end']) + 1 and
+                         text[int(n['end'])] == ' ']
+            if len(next_name) > 0:
+                print('Merging %s and %s' % (n['text'], next_name[0]['text']))
+                n['text'] += ' ' + next_name[0]['text']
+                n['end']  = next_name[0]['end']
+                skip_names.append(next_name[0])
+
+            # Either way, save this one
+            new_names.append(n)
+
+        if len(names) != len(new_names):
+            print('%d -> %d NERs' % (len(names), len(new_names)))
+
         if names:
             meta['ner'] = names
             meta['X-Parsed-By'].append(CoreNLPParser.CORENLP_PARSER)
