@@ -1,9 +1,44 @@
 from solr import Solr
 import os, sys
+reload(sys)
+sys.setdefaultencoding('UTF8') # making UTF8 as default encoding
 from argparse import ArgumentParser
 from indexer import parse_lpsc_from_path
 import re
 from utils import canonical_name
+
+# Functions to perform reference removal (assumes [n] reference style)
+# Written by Karanjeet Singh
+def extract_references(content):
+    """
+    Extract references from text
+    :param content: text
+    :return: dictionary of references with reference id ([N]) as key
+    """
+    references = {}
+    content = content.replace("\n", "\\n")
+    matches = re.findall('(\[[0-9]+\][^\[]*?(?=\[|Acknowledge|Fig|Table|Conclusion|pdf))', content)
+    if matches:
+        for match in matches:
+            ref_id = get_reference_id(match)
+            # No reference id exist -- skip it
+            if ref_id != -1:
+                value = match.replace('\\n', '\n')
+                references[ref_id] = value
+    return references
+
+def get_reference_id(reference):
+    """
+    Extract reference id ([N])
+    :param reference: Any possible reference
+    :return: reference id
+    """
+    ref_id = -1
+    match = re.search('\[[0-9]+\]', reference)
+    if match:
+        ref_id = int(match.group(0).strip('[]'))
+    return ref_id
+
 
 class BratAnnIndexer():
     '''
@@ -94,36 +129,6 @@ class BratAnnIndexer():
             sent_end = len(content)
         return content[sent_start:sent_end]
 
-    def extract_references(self, content):
-        """
-        Extract references from text
-        :param content: text
-        :return: dictionary of references with reference id ([N]) as key
-        """
-        references = {}
-        content = content.replace("\n", "\\n")
-        matches = re.findall('(\[[0-9]+\][^\[]*?(?=\[|Acknowledge|Fig|Table|Conclusion|pdf))', content)
-        if matches:
-            for match in matches:
-                ref_id = self.get_reference_id(match)
-                # No reference id exist -- skip it
-                if ref_id != -1:
-                    value = match.replace('\\n', '\n')
-                    references[ref_id] = value
-        return references
-
-    def get_reference_id(self, reference):
-        """
-        Extract reference id ([N])
-        :param reference: Any possible reference
-        :return: reference id
-        """
-        ref_id = -1
-        match = re.search('\[[0-9]+\]', reference)
-        if match:
-            ref_id = int(match.group(0).strip('[]'))
-        return ref_id
-
     def read_records(self, in_file):
         '''
         Reads brat annotations as solr input documents
@@ -165,7 +170,7 @@ class BratAnnIndexer():
                         ch['excerpt_t'] = self.extract_excerpt(txt, anc_doc)
 
                 # Extract references
-                references = self.extract_references(txt)
+                references = extract_references(txt)
 
                 # Remove references from the content
                 for ref_id in references:
@@ -184,7 +189,7 @@ class BratAnnIndexer():
                     if 'name' in child:
                         child['can_name'] = canonical_name(child['name'])
                     if 'target_names_ss' in child:
-                        child['target_names_ss'] = map(canonical_target_name, child['target_names_ss'])
+                        child['target_names_ss'] = map(canonical_name, child['target_names_ss'])
                     if 'cont_names_ss' in child:
                         child['cont_names_ss'] = map(canonical_name, child['cont_names_ss'])
                     yield child
