@@ -101,7 +101,11 @@ class ParseAll(CoreNLPParser):
                 out.close()
 
             # Call jSRE extraction (prediction)
-            self.jsre_parser.predict(self.jsre_model + jsre_fn[4:] + '.model',
+            # This version works if you want to call separate
+            # element, mineral models.
+            #self.jsre_parser.predict(self.jsre_model + jsre_fn[4:] + '.model',
+            # This version works if you want one merged model.
+            self.jsre_parser.predict(self.jsre_model,
                                      jsre_fn, jsre_fn + '_out')
 
             rel = []
@@ -122,11 +126,14 @@ class ParseAll(CoreNLPParser):
                         # To store in Solr:
                         cont = {
                             'label': 'contains',  # also stored as 'type'
-                            # target_names_ss (list), cont_names_ss (list)
+                            # target_names (list), cont_names (list)
                             'target_names': [canonical_target_name(ex[0]['word'])],
                             'cont_names':   [canonical_name(ex[1]['word'])],
-                            # cont_ids_ss (list) 
+                            # target_ids (list), cont_ids (list) 
                             # - p_id prepended in indexer.py
+                            'target_ids': ['%s_%d_%d' % (ex[0]['ner'].lower(),
+                                    ex[0]['characterOffsetBegin'],
+                                    ex[0]['characterOffsetEnd'])],
                             'cont_ids': ['%s_%d_%d' % (ex[1]['ner'].lower(),
                                     ex[1]['characterOffsetBegin'],
                                     ex[1]['characterOffsetEnd'])],
