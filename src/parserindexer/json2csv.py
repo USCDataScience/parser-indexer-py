@@ -33,7 +33,7 @@ def convert_json_to_csv(jsonfile):
     outf = open(outfn, 'w')
     print 'Writing to', outfn
     # Header
-    outf.write('# Judgment, Docid, Target, Component, Sentence, URL\n')
+    outf.write('Judgment, Docid, Target, Component, Sentence\n')
 
     widgets = ['Docs (of %d): ' % ndocs, Percentage(), ' ', 
                Bar('='), ' ', ETA()]
@@ -85,7 +85,7 @@ def convert_json_to_csv(jsonfile):
                         targ_name,
                         r['cont_names'][0],
                         r['sentence']))
-                       # build URL manually?  It's in the doc->url field.
+                       # build URL manually? 
         pbar.update(i)
         i += 1
 
