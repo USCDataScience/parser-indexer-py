@@ -56,7 +56,11 @@ def convert_json_to_csv(jsonfile):
             # expand the target name and skip the next relation
             start_target = int(r['target_ids'][0].split('_')[1])
             end_target   = int(r['target_ids'][0].split('_')[2])
+            # These are arrays, but for auto-annotations,
+            # they will only ever have one item
             targ_name    = r['target_names'][0]
+            cont_name    = r['cont_names'][0]
+
             if start_target in skip_inds:
                 continue
             next_rels = [r2 for r2 in rels if
@@ -76,14 +80,19 @@ def convert_json_to_csv(jsonfile):
                                                  next_rel['target_names'][0]))
                     targ_name += ' ' + next_rel['target_names'][0]
                     skip_inds.append(start_next_target)
-                      
+
+            # If cont_name is something like Fe-rich or Mg_sulfate,
+            # only keep the first bit.
+            if '-' in cont_name:
+                cont_name = cont_name[:cont_name.find('-')]
+            elif '_' in cont_name:
+                cont_name = cont_name[:cont_name.find('_')]
+
             outf.write(',%s,%s,%s,"%s"\n' % 
                        (docid,
-                        # These are arrays, but for auto-annotations,
-                        # they will only ever have one item
                         #r['target_names'][0],
                         targ_name,
-                        r['cont_names'][0],
+                        cont_name,
                         r['sentence']))
                        # build URL manually? 
         pbar.update(i)
