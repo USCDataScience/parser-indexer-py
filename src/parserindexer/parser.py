@@ -40,7 +40,15 @@ class Parser(object):
         :param path: path to file
         :return: parsed content
         """
-        parsed = tkparser.from_file(path)
+        if not os.path.exists(path):
+            print('Error: Could not find PDF file %s.' % path)
+            sys.exit(1)
+
+        try:
+            parsed = tkparser.from_file(path)
+        except:
+            print('Error: Could not parse PDF file %s.' % path)
+            sys.exit(1)
         parsed['file'] = os.path.abspath(path)
         return parsed
 
@@ -64,8 +72,16 @@ def main(parser_class, args):
     parser = parser_class(**args)
     # get stream/list of files
     if args['list']:
+        if not os.path.exists(args['list']):
+            print('Error: Could not find file containing input paths %s.' % 
+                  args['list'])
+            sys.exit(1)
         files = read_lines(args['list'])
     else:
+        if not os.path.exists(args['in']):
+            print('Error: Could not find input PDF file %s.' % 
+                  args['in'])
+            sys.exit(1)
         files = [args['in']]
     # Step : Parse
     parsed = parser.parse_files(files)
