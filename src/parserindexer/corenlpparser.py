@@ -1,5 +1,9 @@
 from __future__ import print_function
 
+import sys
+# The following two lines make CoreNLP happy
+reload(sys)
+sys.setdefaultencoding('UTF8')
 from parser import *
 from journalparser import *
 from pycorenlp import StanfordCoreNLP
@@ -12,20 +16,25 @@ class CoreNLPParser(JournalParser):
         super(CoreNLPParser, self).__init__(**kwargs)
         self.corenlp = StanfordCoreNLP(kwargs['corenlp_url'] )
         self.props = {
-            'annotators': 'ner',
+            'annotators': 'tokenize,ssplit,lemma,pos,ner',
             'outputFormat': 'json',
             'ner.useSUTime': False,  # dont want SUTime model
             'ner.applyNumericClassifiers': False, # Dont want numeric classifier
         }
         if kwargs.get('ner_model'): # set NER model from CLI
+            if not os.path.exists(kwargs.get('ner_model')):
+                print('Error: Could not find NER model %s.' % 
+                      kwargs.get('ner_model'))
+                sys.exit(1)
             self.props['ner.model'] = kwargs['ner_model']
         print("CoreNLP Properties : ", self.props)
 
     def parse_names(self, text, meta):
         if type(text) != str:
-            text = text.encode('ascii', errors='ignore')
+            text = text.encode('utf8') #, errors='ignore')
         if text[0].isspace(): # dont strip white spaces
             text = '.' + text[1:]
+
         output = self.corenlp.annotate(text, properties=self.props)
         # flatten sentences and tokens
         tokenlists = [s['tokens'] for s in output['sentences']]
@@ -53,11 +62,12 @@ class CoreNLPParser(JournalParser):
                 continue
             next_name = [n2 for n2 in names if \
                          n['label'] == 'Target' and
-                         n2['label'] == n['label'] and
-                         int(n2['begin']) == int(n['end']) + 1 and
-                         text[int(n['end'])] == ' ']
+                         n2['label'] == 'Target' and
+                         int(n2['begin']) == int(n['end']) + 1]
             if len(next_name) > 0:
-                print('Merging %s and %s' % (n['text'], next_name[0]['text']))
+                print('%s: Merging %s and %s' % 
+                      (meta['resourceName'],
+                       n['text'], next_name[0]['text']))
                 n['text'] += ' ' + next_name[0]['text']
                 n['end']  = next_name[0]['end']
                 skip_names.append(next_name[0])
