@@ -14,6 +14,11 @@ class ParseAll(CoreNLPParser):
         self.jsre_parser = JsreParser(**kwargs)
         self.jsre_model = kwargs['jsre_model']
 
+        if not os.path.exists(self.jsre_model):
+            print('Error: Could not find jSRE model %s.' % self.jsre_model)
+            sys.exit(1)
+
+
     def generate_example_id(self, fnbase, index, ex_ind):
         # Create a unique identifier
         return '%s_%s_%s' % (fnbase, str(index), str(ex_ind))
