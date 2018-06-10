@@ -5,7 +5,7 @@ from corenlpparser import *
 from jsreparser import JsreParser
 import io, ntpath
 from utils import canonical_name, canonical_target_name
-
+import datetime
 
 class ParseAll(CoreNLPParser):
 
@@ -177,4 +177,7 @@ if __name__ == '__main__':
     cli_p.add_argument("-j", "--jsre", help="Path to jSRE installation directory.", required=True)
     cli_p.add_argument("-m", "--jsre-model", help="Base path to jSRE models.", required=True)
     args = vars(cli_p.parse_args())
+    start_time = datetime.datetime.now()
     main(ParseAll, args)
+    print('Took ' + str(datetime.datetime.now() - start_time)[:-4] +
+          ' (H:M:S) to process all files.')
