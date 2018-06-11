@@ -99,6 +99,9 @@ class ParseAll(CoreNLPParser):
             [('tmp_element', jsre_ex_element, rel_target_element),
              ('tmp_mineral', jsre_ex_mineral, rel_target_mineral)]:
 
+            if len(examples) == 0:  # No work to do (nothing to classify)
+                continue
+
             # Set up the jSRE example file
             with io.open(jsre_fn, 'w', encoding='utf8') as out:
                 for example in examples:
