@@ -135,11 +135,27 @@ def canonical_name(name):
         return re.sub(r"[\s_-]+", " ", name).title().replace(' ', '_')
 
 
-def canonical_target_name(name):
+def canonical_target_name(name, id, targets, aliases):
     """
     Gets canonical target name
     :param name - name whose canonical name is to be looked up
     :return canonical name
     """
     name = name.strip()
+    # Look up 'name' in the aliases; if found, replace with its antecedent
+    # Note: this is super permissive.  Exact match on id is safe,
+    # but we're also allowing any exact-text match with any other 
+    # known target name.
+    all_targets = [t['annotation_id_s'] for t in targets 
+                   if t['name'] == name]
+    name_aliases = [a['arg2_s'] for a in aliases 
+                    if ((a['arg1_s'] == id) or 
+                        (a['arg1_s'] in all_targets))]
+    if len(name_aliases) > 0:
+        # Ideally there is only one; let's use the first one
+        can_name = [t['name'] for t in targets \
+                        if t['annotation_id_s'] == name_aliases[0]]
+        print('Mapping <%s> to <%s>' % (name, can_name[0]))
+        name = can_name[0]
+
     return re.sub(r"[\s_-]+", " ", name).title().replace(' ', '_')
