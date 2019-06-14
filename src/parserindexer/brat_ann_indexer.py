@@ -123,10 +123,11 @@ class BratAnnIndexer():
         if m:
             sent_start = sent_start + m.start()
         # End: next period followed by {space,newline}, or end of document.
-        sent_end     = anchor_end + content[anchor_end:].find('. ')+1
-        if sent_end <= anchor_end:
-            sent_end = anchor_end + content[anchor_end:].find('.\n')+1
-        if sent_end <= anchor_end:
+        # Better: skip "wt.", "ig." (for Figure), "(e" or ".g"
+        m = re.search('(?<!(wt|ig|\(e|\.g))\.[ \n]', content[anchor_end:])
+        if m != None:
+            sent_end = anchor_end + m.start() + 1
+        else:
             sent_end = len(content)
         return content[sent_start:sent_end]
 
