@@ -6,7 +6,7 @@
 # Kiri Wagstaff
 # July 31, 2017
 
-import sys, os, shutil
+import sys, os, shutil, io
 import json
 from ioutils import read_jsonlines
 
@@ -31,7 +31,7 @@ def convert_json_to_brat(jsonfile, outdir):
         ners = d['metadata']['ner']
         outfn = os.path.join(outdir, 
                              d['metadata']['resourceName'][:-4] + '.ann')
-        outf = open(outfn, 'w')
+        outf = io.open(outfn, 'w', encoding='utf8')
         print 'Writing to', outfn
         for (t, n) in enumerate(ners):
             outf.write('T%d\t%s %s %s\t%s\n' % \
