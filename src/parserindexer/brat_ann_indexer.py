@@ -5,7 +5,7 @@ sys.setdefaultencoding('UTF8') # making UTF8 as default encoding
 from argparse import ArgumentParser
 from indexer import parse_lpsc_from_path
 import re
-from utils import canonical_name
+from utils import canonical_name, canonical_target_name
 
 # Functions to perform reference removal (assumes [n] reference style)
 # Written by Karanjeet Singh
@@ -53,7 +53,8 @@ class BratAnnIndexer():
         parts = ann_line.strip().split('\t')
         res = {
             'annotation_id_s': parts[0],
-            'source': 'brat',
+            #'source': 'brat',
+            'source': 'reviewed',
         }
         if parts[0][0] == 'T': # anchors (for targets, components, events)
             args = parts[1].split()[1:]
@@ -122,10 +123,11 @@ class BratAnnIndexer():
         if m:
             sent_start = sent_start + m.start()
         # End: next period followed by {space,newline}, or end of document.
-        sent_end     = anchor_end + content[anchor_end:].find('. ')+1
-        if sent_end <= anchor_end:
-            sent_end = anchor_end + content[anchor_end:].find('.\n')+1
-        if sent_end <= anchor_end:
+        # Better: skip "wt.", "ig." (for Figure), "(e" or ".g"
+        m = re.search('(?<!(wt|ig|\(e|\.g))\.[ \n]', content[anchor_end:])
+        if m != None:
+            sent_end = anchor_end + m.start() + 1
+        else:
             sent_end = len(content)
         return content[sent_start:sent_end]
 
@@ -162,12 +164,17 @@ class BratAnnIndexer():
                         targets_anns = ch.get('targets_ss', [])
                         cont_anns = ch.get('cont_ss', [])
                         ch['target_ids_ss'] = list(map(lambda t: index[t]['id'], targets_anns))
+                        ch['target_ann_ids_ss'] = list(map(lambda t: index[t]['annotation_id_s'], targets_anns))
                         ch['target_names_ss'] = list(map(lambda t: index[t]['name'], targets_anns))
                         ch['cont_ids_ss'] = list(map(lambda c: index[c]['id'], cont_anns))
                         ch['cont_names_ss'] = list(map(lambda c: index[c]['name'], cont_anns))
                         # extract excerpt from anchor annotation
                         anc_doc = index[ch['anchor_s']]
                         ch['excerpt_t'] = self.extract_excerpt(txt, anc_doc)
+
+                    # Track aliases
+                    targets = [a for a in children if a.get('type') == 'target']
+                    aliases = [a for a in children if a.get('type') == 'alias']
 
                 # Extract references
                 references = extract_references(txt)
@@ -187,11 +194,21 @@ class BratAnnIndexer():
                 }
                 for child in children:
                     if 'name' in child:
-                        child['can_name'] = canonical_name(child['name'])
+                        if child['type'] == 'target':
+                            child['can_name'] = \
+                                canonical_target_name(child['name'], 
+                                                      child['annotation_id_s'],
+                                                      targets, aliases)
+                        else:
+                            child['can_name'] = canonical_name(child['name'])
                     if 'target_names_ss' in child:
-                        child['target_names_ss'] = map(canonical_name, child['target_names_ss'])
+                        child['target_names_ss'] = \
+                            [canonical_target_name(t, i, targets, aliases) \
+                                 for (t,i) in zip(child['target_names_ss'],
+                                                  child['target_ann_ids_ss'])]
                     if 'cont_names_ss' in child:
-                        child['cont_names_ss'] = map(canonical_name, child['cont_names_ss'])
+                        child['cont_names_ss'] = \
+                            [canonical_name(c) for c in child['cont_names_ss']]
                     yield child
 
     def index(self, solr_url, in_file):
