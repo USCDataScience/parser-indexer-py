@@ -116,9 +116,14 @@ class ParseAll(CoreNLPParser):
             self.jsre_parser.predict(self.jsre_model,
                                      jsre_fn, jsre_fn + '_out')
 
+            # Remove jSRE input file
+            os.remove(jsre_fn)
             rel = []
             # Read results from jSRE output files 
-            with io.open(jsre_fn + '_out', 'r') as inf:
+            jsre_output_file = jsre_fn + '_out'
+            if not os.path.exists(jsre_output_file):
+                continue
+            with io.open(jsre_output_file, 'r') as inf:
                 lines = inf.readlines()
                 n_cand = len(lines)
                 for (l,ex) in zip(lines, relations):
@@ -159,8 +164,7 @@ class ParseAll(CoreNLPParser):
                    n_cand))
             total_rel += rel
 
-            # Remove tmp files
-            os.remove(jsre_fn)
+            # Remove tmp output file
             os.remove(jsre_fn + '_out')
                     
         if total_rel:
