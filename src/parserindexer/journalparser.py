@@ -22,7 +22,10 @@ class JournalParser(Parser):
         #              (3) Input file is a PDF
         parsed = super(JournalParser, self).parse_file(path)
         pdf_md = parsed['metadata']
-        assert pdf_md['Content-Type'] == JournalParser._PDF_TYPE
+        if type(pdf_md['Content-Type']) == list:
+            assert JournalParser._PDF_TYPE in pdf_md['Content-Type']
+        else:
+            assert pdf_md['Content-Type'] == JournalParser._PDF_TYPE
         # Why would we check that it's already been parsed before doing so?
         #assert JournalParser._JOURNAL_PARSER in set(pdf_md['X-Parsed-By'])
 
