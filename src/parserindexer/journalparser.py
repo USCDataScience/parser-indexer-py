@@ -59,8 +59,13 @@ class JournalParser(Parser):
         # 4. Remove xxxx.PDF
         content_ann = re.sub(r'([0-9][0-9][0-9][0-9].PDF)', '', content_ann,
                          flags=re.IGNORECASE)
-        # And "Lunar and Planetary Science Conference (201x)"
-        content_ann = re.sub(r'([0-9][0-9].. Lunar and Planetary Science Conference \(201[0-9]\))', 
+        # And "xx(th|st) Lunar and Planetary Science Conference ((19|20)xx)"
+        content_ann = re.sub(r'([0-9][0-9].. Lunar and Planetary Science Conference \((19|20)[0-9][0-9]\)) ?', 
+                         '', content_ann,
+                         flags=re.IGNORECASE)
+        # And "Lunar and Planetary Science XXXIII (2002)"
+        # with Roman numeral and optional year
+        content_ann = re.sub(r'(Lunar and Planetary Science [CDILVXM]+( \((19|20)[0-9][0-9]\))?) ?', 
                          '', content_ann,
                          flags=re.IGNORECASE)
 
