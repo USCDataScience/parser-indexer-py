@@ -1,14 +1,15 @@
 from __future__ import print_function
 
+import os
+import sys
 import argparse
+import traceback
 from argparse import ArgumentParser
-
 from tika import parser as tkparser
 from ioutils import read_lines, dump_jsonlines
-import os, sys, traceback, re
 
 
-class Parser(object):
+class TikaParser(object):
 
     def __init__(self, **kwargs):
         server_url = kwargs['tika_url']
@@ -28,7 +29,7 @@ class Parser(object):
         for p in paths:
             try:
                 yield self.parse_file(p)
-            except Exception as e:
+            except Exception:
                 print("Exception in user code:")
                 print('-'*60)
                 traceback.print_exc(file=sys.stdout)
@@ -56,18 +57,23 @@ class Parser(object):
 class CliParser(ArgumentParser):
     def __init__(self, parser_class):
         # Step : Parse CLI args
-        super(CliParser, self).__init__(prog=parser_class.__name__,
+        super(CliParser, self).__init__(
+            prog=parser_class.__name__,
             description="This tool can parse files.",
             formatter_class=argparse.ArgumentDefaultsHelpFormatter,
             version="1.0")
         input_args = self.add_mutually_exclusive_group(required=True)
         input_args.add_argument("-i", "--in", help="Path to Input File.")
-        input_args.add_argument("-li", "--list", help="Path to a text file which contains list of input file paths")
-        self.add_argument("-o", "--out", help="Path to output file.", required=True)
-        self.add_argument("-p", "--tika-url", help="URL of Tika Server.", required=False)
+        input_args.add_argument("-li", "--list",
+                                help="Path to a text file which contains list "
+                                     "of input file paths")
+        self.add_argument("-o", "--out", help="Path to output file.",
+                          required=True)
+        self.add_argument("-p", "--tika-url", help="URL of Tika Server.",
+                          required=False)
+
 
 def main(parser_class, args):
-
     # Step : Initialize Tika
     parser = parser_class(**args)
     # get stream/list of files
@@ -88,6 +94,7 @@ def main(parser_class, args):
     # Step store the objects to file
     dump_jsonlines(parsed, args['out'])
 
+
 if __name__ == '__main__':
-    args = vars(CliParser(Parser).parse_args())
-    main(Parser, args)
+    args = vars(CliParser(TikaParser).parse_args())
+    main(TikaParser, args)
