@@ -1,6 +1,5 @@
 from __future__ import print_function
 
-
 from six import add_metaclass
 from abc import ABCMeta, abstractmethod
 
@@ -14,19 +13,3 @@ class Parser(object):
     def parse(self, *args):
         raise RuntimeError('This is abstract method that must be implemented '
                            'in sub-classes')
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
