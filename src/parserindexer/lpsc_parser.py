@@ -1,37 +1,33 @@
 from __future__ import print_function
 
-from parser import *
+import re
+import sys
+import json
+from parser import Parser
+from ioutils import read_lines
+from tika_parser import TikaParser
+from jsre_parser import JsreParser
 from brat_ann_indexer import extract_references
 
 
 class LpscParser(Parser):
+    """ This class a specialized parser for parsing Journals which are in PDF
+    format
     """
-    This class a specialized parser for parsing Journals which are in PDF format
-    """
-    _JOURNAL_PARSER = 'org.apache.tika.parser.journal.JournalParser'
-    _NER_PARSER = 'org.apache.tika.parser.ner.NamedEntityParser'
-    _PDF_TYPE = "application/pdf"
+    JOURNAL_PARSER = 'org.apache.tika.parser.journal.JournalParser'
+    PDF_TYPE = "application/pdf"
 
-    def parse_file(self, path):
-        """
-        Parses Journal files
-        :param path:
-        :return:
-        """
-        # Assumption : (1) Gobrid parser is enabled for PDFs
-        #              (2) NER is not enabled for PDFs, so an additional parse
-        #              step is required on text
-        #              (3) Input file is a PDF
-        parsed = super(LpscParser, self).parse_file(path)
-        pdf_md = parsed['metadata']
-        if type(pdf_md['Content-Type']) == list:
-            assert LpscParser._PDF_TYPE in pdf_md['Content-Type']
+    def __init__(self):
+        super(LpscParser, self).__init__('lpsc_parser')
+
+    def parse(self, text, metadata):
+        if type(metadata['Content-Type']) == list:
+            assert LpscParser.PDF_TYPE in metadata['Content-Type']
         else:
-            assert pdf_md['Content-Type'] == LpscParser._PDF_TYPE
+            assert metadata['Content-Type'] == LpscParser.PDF_TYPE
 
         # Improve parsing and save in parsed['content_ann_s']
-        content_ann = parsed['content']
-        assert type(content_ann) == str or type(content_ann) == unicode
+        assert type(text) == str or type(text) == unicode
 
         # New parsing (after extract_text_utf8.py)
         # 0. Translate some UTF-8 punctuation to ASCII
@@ -49,62 +45,105 @@ class LpscParser(Parser):
             # bullets
             0x2219: 0x2e, 0x2022: 0x2e,
         }
-        content_ann = content_ann.translate(punc)
+        text = text.translate(punc)
 
         # 1. Replace newlines that separate words with a space (unless hyphen)
-        content_ann = re.sub(r'([^\s-])[\r|\n]+([^\s])', '\\1 \\2', content_ann)
+        text = re.sub(r'([^\s-])[\r|\n]+([^\s])', '\\1 \\2', text)
 
-        # 2. Remove hyphenation at the end of lines 
+        # 2. Remove hyphenation at the end of lines
         # (this is sometimes bad, as with "Fe-\nrich")
-        content_ann = content_ann.replace('-\n', '\n')
+        text = text.replace('-\n', '\n')
 
         # 3. Remove all newlines
-        content_ann = re.sub(r'[\r|\n]+', '', content_ann)
+        text = re.sub(r'[\r|\n]+', '', text)
 
         # 4. Remove xxxx.PDF
-        content_ann = re.sub(r'([0-9][0-9][0-9][0-9].PDF)', '', content_ann,
-                         flags=re.IGNORECASE)
+        text = re.sub(r'([0-9][0-9][0-9][0-9].PDF)', '', text,
+                      flags=re.IGNORECASE)
         # And "xx(th|st) Lunar and Planetary Science Conference ((19|20)xx)"
-        content_ann = re.sub(r'([0-9][0-9].. Lunar and Planetary Science Conference \((19|20)[0-9][0-9]\)) ?', 
-                             '', content_ann, flags=re.IGNORECASE)
+        text = re.sub(r'([0-9][0-9].. Lunar and Planetary Science Conference '
+                      r'\((19|20)[0-9][0-9]\)) ?', '', text,
+                      flags=re.IGNORECASE)
         # And "Lunar and Planetary Science XXXIII (2002)"
         # with Roman numeral and optional year
-        content_ann = re.sub(r'(Lunar and Planetary Science [CDILVXM]+( \((19|20)[0-9][0-9]\))?) ?', 
-                             '', content_ann, flags=re.IGNORECASE)
+        text = re.sub(r'(Lunar and Planetary Science '
+                      r'[CDILVXM]+( \((19|20)[0-9][0-9]\))?) ?', '', text,
+                      flags=re.IGNORECASE)
 
         # 5. Remove mailto: links
-        content_ann = re.sub(r'mailto:[^\s]+', '', content_ann)
+        text = re.sub(r'mailto:[^\s]+', '', text)
 
         # 6. Move references to their own field (references)
-        refs = extract_references(content_ann)
+        refs = extract_references(text)
         for ref_id in refs:  # preserve length; insert whitespace
-            content_ann = content_ann.replace(refs[ref_id],
-                                              ' ' * len(refs[ref_id]))
-        parsed['references'] = refs.values()
+            text = text.replace(refs[ref_id], ' ' * len(refs[ref_id]))
 
-        # Store the modified content
-        parsed['content_ann_s'] = content_ann
+        return {
+            'references': refs.values(),
+            'cleaned_content': text
+        }
 
-        # Find named entities
-        self.parse_names(content_ann, pdf_md)
 
-        return parsed
+def process(in_file, in_list, out_file, tika_server_url, corenlp_server_url,
+            ner_model, jsre_root, jsre_model, jsre_tmp_dir):
+    if in_file and in_list:
+        print('[ERROR] in_file and in_list cannot be provided simultaneously')
+        sys.exit(1)
 
-    def parse_names(self, content, meta):
-        # Named Entity Parsing
-        # Assumption : NER parser is enabled for text/plain
-        text_feats = tkparser.from_buffer(content)
-        ner_md = text_feats['metadata']
-        assert LpscParser._NER_PARSER in set(ner_md['X-Parsed-By'])
+    tika_parser = TikaParser(tika_server_url)
+    lpsc_parser = LpscParser()
+    jsre_parser = JsreParser(corenlp_server_url, ner_model, jsre_root,
+                             jsre_model, jsre_tmp_dir)
 
-        ner_keys = filter(lambda x: x.startswith('NER_'), ner_md.keys())
-        for entity_type in ner_keys:
-            meta[entity_type] = ner_md[entity_type]
-        # Merged NER and Journal Parsers
-        # This was NER_PARSER, which makes no sense.  Now JOURNAL_PARSER.
-        meta['X-Parsed-By'].append(LpscParser._JOURNAL_PARSER)
+    if in_file:
+        files = [in_file]
+    else:
+        files = read_lines(in_list)
+
+    out_f = open(out_file, 'wb', 1)
+    for f in files:
+        tika_dict = tika_parser.parser(f)
+        lpsc_dict = lpsc_parser.parse(tika_dict['content'],
+                                      tika_dict['metadata'])
+        jsre_dict = jsre_parser.parse(lpsc_dict['cleaned_content'])
+
+        tika_dict['content_ann_s'] = lpsc_dict['cleaned_content']
+        tika_dict['references'] = lpsc_dict['references']
+        tika_dict['metadata']['ner'] = jsre_dict['ner']
+        tika_dict['metadata']['rel'] = jsre_dict['relation']
+        tika_dict['metadata']['sentences'] = jsre_dict['sentences']
+        tika_dict['metadata']['X-Parsed-By'] = jsre_dict['X-Parsed-By']
+
+        out_f.write(json.dumps(tika_dict))
+        out_f.write('\n')
+
+    out_f.close()
 
 
 if __name__ == '__main__':
-    args = vars(CliParser(LpscParser).parse_args())
-    main(LpscParser, args)
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    input_parser = parser.add_mutually_exclusive_group(required=True)
+
+    input_parser.add_argument('-i', '--in_file', help='Path to input file')
+    input_parser.add_argument('-li', '--in_list', help='Path to input list')
+    parser.add_argument('-o', '--out_file', required=True,
+                        help='Path to output JSON file')
+    parser.add_argument('-p', '--tika_server_url', required=False,
+                        help='Tika server URL')
+    parser.add_argument('-c', '--corenlp_server_url',
+                        default='"http://localhost:9000',
+                        help='CoreNLP Server URL')
+    parser.add_argument('-n', '--ner_model', required=False,
+                        help='Path to a Named Entity Recognition (NER) model')
+    parser.add_argument('-jr', '--jsre_root', default='/proj/mte/jSRE/jsre-1.1',
+                        help='Path to jSRE installation directory. Default is '
+                             '/proj/mte/jSRE/jsre-1.1')
+    parser.add_argument('-jm', '--jsre_model', required=True,
+                        help='Path to jSRE model')
+    parser.add_argument('-jt', '--jsre_tmp_dir', default='/tmp',
+                        help='Path to a directory for jSRE to temporarily '
+                             'store input and output files. Default is /tmp')
+    args = parser.parse_args()
+    process(**vars(args))
