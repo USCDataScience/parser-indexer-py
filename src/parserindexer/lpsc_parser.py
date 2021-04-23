@@ -11,8 +11,9 @@ from brat_ann_indexer import extract_references
 
 
 class LpscParser(Parser):
-    """ This class a specialized parser for parsing Journals which are in PDF
-    format
+    """ The LpscParser removes special text content/format (e.g., LPSC
+    conference header) from the two-page abstracts published at Lunar and
+    Planetary Science Conference
     """
     JOURNAL_PARSER = 'org.apache.tika.parser.journal.JournalParser'
     PDF_TYPE = "application/pdf"
