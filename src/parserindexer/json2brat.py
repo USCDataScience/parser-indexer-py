@@ -29,8 +29,12 @@ def convert_json_to_brat(jsonfile, outdir):
 
         # Output relevant annotations into a brat .ann file
         ners = d['metadata']['ner']
-        outfn = os.path.join(outdir, 
-                             d['metadata']['resourceName'][:-4] + '.ann')
+        res_name = d['metadata']['resourceName']
+        if type(res_name) == list:
+            # Sometimes Tika returns this as something like
+            # "resourceName": ["2005_1725.pdf", "High Quality.joboptions"]
+            res_name = res_name[0]
+        outfn = os.path.join(outdir, res_name[:-4] + '.ann')
         outf = io.open(outfn, 'w', encoding='utf8')
         print 'Writing to', outfn
         for (t, n) in enumerate(ners):
