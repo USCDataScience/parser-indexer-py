@@ -23,20 +23,28 @@ def convert_json_to_brat(jsonfile, outdir):
 
     # Iterate over documents
     for d in docs:
-        if 'ner' not in d['metadata']:
-            print 'No named entities found for', d['file']
-            continue
-
-        # Output relevant annotations into a brat .ann file
-        ners = d['metadata']['ner']
         res_name = d['metadata']['resourceName']
         if type(res_name) == list:
             # Sometimes Tika returns this as something like
             # "resourceName": ["2005_1725.pdf", "High Quality.joboptions"]
             res_name = res_name[0]
+
+        # Output text into a .txt file
+        text = d['content_ann_s']
+        outfn = os.path.join(outdir, res_name[:-4] + '.txt')
+        with io.open(outfn, 'w', encoding='utf8') as outf:
+            print('Writing text to %s' % outfn)
+            outf.write(text + '\n')
+
+        if 'ner' not in d['metadata']:
+            print('No named entities found for %s' % d['file'])
+            continue
+
+        # Output relevant annotations into a brat .ann file
+        ners = d['metadata']['ner']
         outfn = os.path.join(outdir, res_name[:-4] + '.ann')
         outf = io.open(outfn, 'w', encoding='utf8')
-        print 'Writing to', outfn
+        print('Writing annotations to %s' % outfn)
         for (t, n) in enumerate(ners):
             outf.write('T%d\t%s %s %s\t%s\n' % \
                        (t+1, n['label'], n['begin'], n['end'], n['text']))
