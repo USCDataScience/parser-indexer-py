@@ -82,9 +82,11 @@ class JournalParser(Parser):
 
         # 6. Move references to their own field (references)
         refs = extract_references(content_ann)
-        for ref_id in refs:  # preserve length; insert whitespace
-            content_ann = content_ann.replace(refs[ref_id],
-                                              ' ' * len(refs[ref_id]))
+        # This does weird things to citations, not just references,
+        # so disable it for now.
+        #for ref_id in refs:  # preserve length; insert whitespace
+        #    content_ann = content_ann.replace(refs[ref_id],
+        #                                      ' ' * len(refs[ref_id]))
         parsed['references'] = refs.values()
 
         # Store the modified content
