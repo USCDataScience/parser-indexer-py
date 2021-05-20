@@ -91,7 +91,7 @@ if __name__ == '__main__':
     parser.add_argument('-p', '--tika_server_url', required=False,
                         help='Tika server URL')
     parser.add_argument('-c', '--corenlp_server_url',
-                        default='"http://localhost:9000',
+                        default='http://localhost:9000',
                         help='CoreNLP Server URL')
     parser.add_argument('-n', '--ner_model', required=False,
                         help='Path to a Named Entity Recognition (NER) model')
