@@ -60,7 +60,7 @@ def process(in_file, in_list, out_file, tika_server_url, corenlp_server_url,
 
     out_f = open(out_file, 'wb', 1)
     for f in files:
-        tika_dict = tika_parser.parser(f)
+        tika_dict = tika_parser.parse(f)
         lpsc_dict = lpsc_parser.parse(tika_dict['content'],
                                       tika_dict['metadata'])
         jsre_dict = jsre_parser.parse(lpsc_dict['cleaned_content'])
