@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 import os
+import io
 import sys
 import json
 import warnings
@@ -108,7 +109,7 @@ class JsreParser(CoreNLPParser):
         in_file = '%s/jsre_input.txt' % self.jsre_tmp_dir
         out_file = '%s/jsre_output.txt' % self.jsre_tmp_dir
 
-        with open(in_file, 'w', encoding='utf8') as f:
+        with io.open(in_file, 'w', encoding='utf8') as f:
             for r in records:
                 f.write(r)
 
