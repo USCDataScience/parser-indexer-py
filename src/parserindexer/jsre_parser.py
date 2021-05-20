@@ -132,7 +132,8 @@ class JsreParser(CoreNLPParser):
 
             contains_relation.append({
                 'label': 'contains',
-                'target_names': [canonical_target_name(rel[0]['word'])],
+                # TODO: 'target_names': [canonical_target_name(rel[0]['word'])],
+                'target_names': [rel[0]['word']],
                 'cont_names': [canonical_name(rel[1]['word'])],
                 'target_ids': ['%s_%d_%d' % (rel[0]['ner'].lower(),
                                              rel[0]['characterOffsetBegin'],
