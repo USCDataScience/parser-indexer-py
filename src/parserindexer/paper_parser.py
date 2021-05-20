@@ -59,11 +59,7 @@ class PaperParser(Parser):
         # 3. Remove all newlines
         text = re.sub(r'[\r|\n]+', '', text)
 
-        # 4. Move references to their own field (references)
-        refs = extract_references(text)
-
         return {
-            'references': refs.values(),
             'cleaned_content': text
         }
 
@@ -87,12 +83,11 @@ def process(in_file, in_list, out_file, tika_server_url, corenlp_server_url,
     out_f = open(out_file, 'wb', 1)
     for f in files:
         tika_dict = tika_parser.parse(f)
-        lpsc_dict = paper_parser.parse(tika_dict['content'],
-                                       tika_dict['metadata'])
-        jsre_dict = jsre_parser.parse(lpsc_dict['cleaned_content'])
+        paper_dict = paper_parser.parse(tika_dict['content'],
+                                        tika_dict['metadata'])
+        jsre_dict = jsre_parser.parse(paper_dict['cleaned_content'])
 
-        tika_dict['content_ann_s'] = lpsc_dict['cleaned_content']
-        tika_dict['references'] = lpsc_dict['references']
+        tika_dict['content_ann_s'] = paper_dict['cleaned_content']
         tika_dict['metadata']['ner'] = jsre_dict['ner']
         tika_dict['metadata']['rel'] = jsre_dict['relation']
         tika_dict['metadata']['sentences'] = jsre_dict['sentences']

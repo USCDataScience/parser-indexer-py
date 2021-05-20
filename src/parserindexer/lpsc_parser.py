@@ -7,6 +7,7 @@ from ioutils import read_lines
 from paper_parser import PaperParser
 from tika_parser import TikaParser
 from jsre_parser import JsreParser
+from brat_ann_indexer import extract_references
 
 
 class LpscParser(PaperParser):
@@ -36,8 +37,11 @@ class LpscParser(PaperParser):
                               r'[CDILVXM]+ (\((19|20)[0-9][0-9]\))?) ?', '',
                               cleaned_text, flags=re.IGNORECASE)
 
+        # Extract references
+        refs = extract_references(text)
+
         return {
-            'references': paper_dict['references'],
+            'references': refs.values(),
             'cleaned_content': cleaned_text
         }
 
