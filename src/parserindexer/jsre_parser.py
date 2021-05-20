@@ -179,7 +179,7 @@ def process(in_file, in_list, out_file, tika_server_url, corenlp_server_url,
         tika_dict['metadata']['ner'] = jsre_dict['ner']
         tika_dict['metadata']['rel'] = jsre_dict['relation']
         tika_dict['metadata']['sentences'] = jsre_dict['sentences']
-        tika_dict['metadata']['X-Parsed-By'] = jsre_dict['X-Parsed-By']
+        tika_dict['metadata']['X-Parsed-By'].append(jsre_dict['X-Parsed-By'])
 
         out_f.write(json.dumps(tika_dict))
         out_f.write('\n')
@@ -200,7 +200,7 @@ if __name__ == '__main__':
     parser.add_argument('-p', '--tika_server_url', required=False,
                         help='Tika server URL')
     parser.add_argument('-c', '--corenlp_server_url',
-                        default='"http://localhost:9000',
+                        default='http://localhost:9000',
                         help='CoreNLP Server URL')
     parser.add_argument('-n', '--ner_model', required=False,
                         help='Path to a Named Entity Recognition (NER) model')
