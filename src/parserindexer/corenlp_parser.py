@@ -17,6 +17,9 @@ sys.setdefaultencoding('UTF8')
 
 class CoreNLPParser(Parser):
     """ The CoreNLPParser class builds upon Stanford CoreNLP package """
+
+    CORENLP_PARSER = "edu.stanford.nlp.pipeline.CoreNLPServer"
+
     def __init__(self, corenlp_server_url, ner_model,
                  parser_name='corenlp_parser'):
         super(CoreNLPParser, self).__init__(parser_name)
