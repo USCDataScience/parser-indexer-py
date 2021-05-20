@@ -28,6 +28,10 @@ class CoreNLPParser(Parser):
             'ner.useSUTime': False,
             # Dont want numeric classifier
             'ner.applyNumericClassifiers': False,
+            'timeout': '60000',
+            # Don't need fine grained recognition with corenlp built-in NER
+            # models
+            'ner.applyFineGrained': False
         }
         if ner_model:
             if not os.path.exists(ner_model):
