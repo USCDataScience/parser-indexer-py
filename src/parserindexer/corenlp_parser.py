@@ -100,7 +100,7 @@ class CoreNLPParser(Parser):
 
         return {
             'ner': new_names,
-            'X-Parsed-by': CoreNLPParser.CORENLP_PARSER,
+            'X-Parsed-By': CoreNLPParser.CORENLP_PARSER,
             'sentences': output['sentences']
         }
 
@@ -125,7 +125,7 @@ def process(in_file, in_list, out_file, tika_server_url, corenlp_server_url,
         corenlp_dict = corenlp_parser.parse(tika_dict['content'])
 
         tika_dict['metadata']['ner'] = corenlp_dict['ner']
-        tika_dict['metadata']['X-Parsed-By'] = corenlp_dict['X-Parsed-By']
+        tika_dict['metadata']['X-Parsed-By'].append(corenlp_dict['X-Parsed-By'])
         tika_dict['metadata']['sentences'] = corenlp_dict['sentences']
 
         out_f.write(json.dumps(tika_dict))
