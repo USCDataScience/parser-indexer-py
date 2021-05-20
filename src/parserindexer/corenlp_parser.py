@@ -3,6 +3,7 @@ from __future__ import print_function
 import os
 import sys
 import json
+import urllib
 import itertools
 from parser import Parser
 from ioutils import read_lines
@@ -54,6 +55,8 @@ class CoreNLPParser(Parser):
         if text[0].isspace():  # dont strip white spaces
             text = '.' + text[1:]
 
+        # Quote (with percent-encoding) reserved characters in URL for CoreNLP
+        text = urllib.quote(text)
         output = self.corenlp.annotate(text, properties=self.props)
 
         # flatten sentences and tokens
