@@ -40,6 +40,8 @@ class PaperParser(Parser):
             0x2010: 0x2d, 0x2011: 0x2d, 0x2012: 0x2d, 0x2013: 0x2d,
             # comma
             0xFF0C: 0x2c,
+            # degree
+            0xF0B0: 0xb0,
             # space
             0x00A0: 0x20,
             # bullets
@@ -59,8 +61,6 @@ class PaperParser(Parser):
 
         # 4. Move references to their own field (references)
         refs = extract_references(text)
-        for ref_id in refs:  # preserve length; insert whitespace
-            text = text.replace(refs[ref_id], ' ' * len(refs[ref_id]))
 
         return {
             'references': refs.values(),

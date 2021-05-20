@@ -33,7 +33,7 @@ class LpscParser(PaperParser):
         # And "Lunar and Planetary Science XXXIII (2002)"
         # with Roman numeral and optional year
         cleaned_text = re.sub(r'(Lunar and Planetary Science '
-                              r'[CDILVXM]+( \((19|20)[0-9][0-9]\))?) ?', '',
+                              r'[CDILVXM]+ (\((19|20)[0-9][0-9]\))?) ?', '',
                               cleaned_text, flags=re.IGNORECASE)
 
         return {
