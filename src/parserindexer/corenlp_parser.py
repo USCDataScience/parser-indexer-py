@@ -7,7 +7,7 @@ import urllib
 import itertools
 from parser import Parser
 from ioutils import read_lines
-from tika_parser import TikaParser
+from ads_parser import AdsParser
 from pycorenlp import StanfordCoreNLP
 
 # The following two lines make CoreNLP happy
@@ -106,12 +106,12 @@ class CoreNLPParser(Parser):
 
 
 def process(in_file, in_list, out_file, tika_server_url, corenlp_server_url,
-            ner_model):
+            ner_model, ads_url, ads_token):
     if in_file and in_list:
         print('[ERROR] in_file and in_list cannot be provided simultaneously')
         sys.exit(1)
 
-    tika_parser = TikaParser(tika_server_url)
+    ads_parser = AdsParser(ads_token, ads_url, tika_server_url)
     corenlp_parser = CoreNLPParser(corenlp_server_url, ner_model)
 
     if in_file:
@@ -121,14 +121,14 @@ def process(in_file, in_list, out_file, tika_server_url, corenlp_server_url,
 
     out_f = open(out_file, 'wb', 1)
     for f in files:
-        tika_dict = tika_parser.parse(f)
-        corenlp_dict = corenlp_parser.parse(tika_dict['content'])
+        ads_dict = ads_parser.parse(f)
+        corenlp_dict = corenlp_parser.parse(ads_dict['content'])
 
-        tika_dict['metadata']['ner'] = corenlp_dict['ner']
-        tika_dict['metadata']['X-Parsed-By'].append(corenlp_dict['X-Parsed-By'])
-        tika_dict['metadata']['sentences'] = corenlp_dict['sentences']
+        ads_dict['metadata']['ner'] = corenlp_dict['ner']
+        ads_dict['metadata']['X-Parsed-By'].append(corenlp_dict['X-Parsed-By'])
+        ads_dict['metadata']['sentences'] = corenlp_dict['sentences']
 
-        out_f.write(json.dumps(tika_dict))
+        out_f.write(json.dumps(ads_dict))
         out_f.write('\n')
 
     out_f.close()
@@ -151,5 +151,20 @@ if __name__ == '__main__':
                         help='CoreNLP Server URL')
     parser.add_argument('-n', '--ner_model', required=False,
                         help='Path to a Named Entity Recognition (NER) model ')
+    parser.add_argument('-a', '--ads_url',
+                        default='https://api.adsabs.harvard.edu/v1/search/query',
+                        help='ADS RESTful API. The ADS RESTful API should not '
+                             'need to be changed frequently unless someting at '
+                             'the ADS is changed.')
+    parser.add_argument('-t', '--ads_token',
+                        default='jON4eu4X43ENUI5ugKYc6GZtoywF376KkKXWzV8U',
+                        help='The ADS token, which is required to use the ADS '
+                             'RESTful API. The token was obtained using the '
+                             'instructions at '
+                             'https://github.com/adsabs/adsabs-dev-api#access. '
+                             'The ADS token should not need to be changed '
+                             'frequently unless something at the ADS is '
+                             'changed.')
+
     args = parser.parse_args()
     process(**vars(args))

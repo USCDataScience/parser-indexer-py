@@ -4,7 +4,7 @@ import sys
 import json
 from ioutils import read_lines
 from paper_parser import PaperParser
-from tika_parser import TikaParser
+from ads_parser import AdsParser
 from jsre_parser import JsreParser
 
 
@@ -30,12 +30,12 @@ class JgrParser(PaperParser):
 
 
 def process(in_file, in_list, out_file, tika_server_url, corenlp_server_url,
-            ner_model, jsre_root, jsre_model, jsre_tmp_dir):
+            ner_model, jsre_root, jsre_model, jsre_tmp_dir, ads_url, ads_token):
     if in_file and in_list:
         print('[ERROR] in_file and in_list cannot be provided simultaneously')
         sys.exit(1)
 
-    tika_parser = TikaParser(tika_server_url)
+    ads_parser = AdsParser(ads_token, ads_url, tika_server_url)
     jgr_parser = JgrParser()
     jsre_parser = JsreParser(corenlp_server_url, ner_model, jsre_root,
                              jsre_model, jsre_tmp_dir)
@@ -47,19 +47,19 @@ def process(in_file, in_list, out_file, tika_server_url, corenlp_server_url,
 
     out_f = open(out_file, 'wb', 1)
     for f in files:
-        tika_dict = tika_parser.parse(f)
-        journal_dict = jgr_parser.parse(tika_dict['content'],
-                                        tika_dict['metadata'])
+        ads_dict = ads_parser.parse(f)
+        journal_dict = jgr_parser.parse(ads_dict['content'],
+                                        ads_dict['metadata'])
         jsre_dict = jsre_parser.parse(journal_dict['cleaned_content'])
 
-        tika_dict['content_ann_s'] = journal_dict['cleaned_content']
-        tika_dict['references'] = journal_dict['references']
-        tika_dict['metadata']['ner'] = jsre_dict['ner']
-        tika_dict['metadata']['rel'] = jsre_dict['relation']
-        tika_dict['metadata']['sentences'] = jsre_dict['sentences']
-        tika_dict['metadata']['X-Parsed-By'] = jsre_dict['X-Parsed-By']
+        ads_dict['content_ann_s'] = journal_dict['cleaned_content']
+        ads_dict['references'] = journal_dict['references']
+        ads_dict['metadata']['ner'] = jsre_dict['ner']
+        ads_dict['metadata']['rel'] = jsre_dict['relation']
+        ads_dict['metadata']['sentences'] = jsre_dict['sentences']
+        ads_dict['metadata']['X-Parsed-By'] = jsre_dict['X-Parsed-By']
 
-        out_f.write(json.dumps(tika_dict))
+        out_f.write(json.dumps(ads_dict))
         out_f.write('\n')
 
     out_f.close()
@@ -90,5 +90,19 @@ if __name__ == '__main__':
     parser.add_argument('-jt', '--jsre_tmp_dir', default='/tmp',
                         help='Path to a directory for jSRE to temporarily '
                              'store input and output files. Default is /tmp')
+    parser.add_argument('-a', '--ads_url',
+                        default='https://api.adsabs.harvard.edu/v1/search/query',
+                        help='ADS RESTful API. The ADS RESTful API should not '
+                             'need to be changed frequently unless someting at '
+                             'the ADS is changed.')
+    parser.add_argument('-t', '--ads_token',
+                        default='jON4eu4X43ENUI5ugKYc6GZtoywF376KkKXWzV8U',
+                        help='The ADS token, which is required to use the ADS '
+                             'RESTful API. The token was obtained using the '
+                             'instructions at '
+                             'https://github.com/adsabs/adsabs-dev-api#access. '
+                             'The ADS token should not need to be changed '
+                             'frequently unless something at the ADS is '
+                             'changed.')
     args = parser.parse_args()
     process(**vars(args))
