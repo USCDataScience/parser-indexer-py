@@ -39,14 +39,15 @@ class AdsParser(TikaParser):
         data_docs = data['response']['docs']
         ads_dict = dict()
 
+        if len(data_docs) == 0:
+            warnings.warn('0 document found in the ADS database')
+            return ads_dict
+
         if len(data_docs) > 1:
-            data_docs = data_docs[0]
             warnings.warn('There are multiple documents returned from the ADS '
                           'database, and we are using the first document.')
-        elif len(data_docs) == 0:
-            warnings.warn('0 document found in the ADS database')
 
-            return ads_dict
+        data_docs = data_docs[0]
 
         ads_dict['primary_author'] = data_docs['first_author']
         ads_dict['author'] = data_docs['author']
@@ -65,6 +66,9 @@ class AdsParser(TikaParser):
 
         # Query the ADS database
         ads_dict = self.query_ads_database(title)
+
+        if len(ads_dict) == 0:
+            return ads_dict
 
         # Add ADS records to the dictionary returned from TIKA parser
         tika_dict['metadata']['ads:primary_author'] = ads_dict['primary_author']
