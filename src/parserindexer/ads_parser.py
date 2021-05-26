@@ -128,3 +128,7 @@ def main():
 
     args = parser.parse_args()
     process(**vars(args))
+
+
+if __name__ == '__main__':
+    main()
