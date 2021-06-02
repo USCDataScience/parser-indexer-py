@@ -4,6 +4,7 @@ import sys
 # The following two lines make CoreNLP happy
 reload(sys)
 sys.setdefaultencoding('UTF8')
+import urllib
 from parser import *
 from journalparser import *
 from pycorenlp import StanfordCoreNLP
@@ -35,6 +36,8 @@ class CoreNLPParser(JournalParser):
         if text[0].isspace(): # dont strip white spaces
             text = '.' + text[1:]
 
+        # Quote (with percent-encoding) reserved characters in URL for CorenLP
+        text = urllib.quote(text)
         output = self.corenlp.annotate(text, properties=self.props)
         # flatten sentences and tokens
         tokenlists = [s['tokens'] for s in output['sentences']]

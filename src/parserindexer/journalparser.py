@@ -44,6 +44,7 @@ class JournalParser(Parser):
                  0x201C:0x22, 0x201D:0x22, # double quote
                  0x2010:0x2d, 0x2011:0x2d, 0x2012:0x2d, 0x2013:0x2d, # hyphens
                  0xFF0C:0x2c, # comma
+                 0xF0B0:0xb0, # degree
                  0x00A0:0x20, # space
                  0x2219:0x2e, 0x2022:0x2e, # bullets
                  }
@@ -63,12 +64,13 @@ class JournalParser(Parser):
         content_ann = re.sub(r'([0-9][0-9][0-9][0-9].PDF)', '', content_ann,
                          flags=re.IGNORECASE)
         # And "xx(th|st) Lunar and Planetary Science Conference ((19|20)xx)"
-        content_ann = re.sub(r'([0-9][0-9].. Lunar and Planetary Science Conference \((19|20)[0-9][0-9]\)) ?', 
+        # with optional parentheses, optional LPI contrib
+        content_ann = re.sub(r'([0-9][0-9].. Lunar and Planetary Science Conference \(?(19|20)[0-9][0-9]\)?)( \(LPI Contrib. No. [0-9][0-9][0-9][0-9]\))? ?', 
                          '', content_ann,
                          flags=re.IGNORECASE)
         # And "Lunar and Planetary Science XXXIII (2002)"
         # with Roman numeral and optional year
-        content_ann = re.sub(r'(Lunar and Planetary Science [CDILVXM]+( \((19|20)[0-9][0-9]\))?) ?', 
+        content_ann = re.sub(r'(Lunar and Planetary Science [CDILVXM]+ (\((19|20)[0-9][0-9]\))?) ?', 
                          '', content_ann,
                          flags=re.IGNORECASE)
 
@@ -80,9 +82,11 @@ class JournalParser(Parser):
 
         # 6. Move references to their own field (references)
         refs = extract_references(content_ann)
-        for ref_id in refs:  # preserve length; insert whitespace
-            content_ann = content_ann.replace(refs[ref_id],
-                                              ' ' * len(refs[ref_id]))
+        # This does weird things to citations, not just references,
+        # so disable it for now.
+        #for ref_id in refs:  # preserve length; insert whitespace
+        #    content_ann = content_ann.replace(refs[ref_id],
+        #                                      ' ' * len(refs[ref_id]))
         parsed['references'] = refs.values()
 
         # Store the modified content
