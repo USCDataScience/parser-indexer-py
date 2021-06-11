@@ -118,7 +118,12 @@ class JsreParser(CoreNLPParser):
             warnings.warn('jSRE output file not found, which indicates jSRE '
                           'run may be failed.')
 
-            return contains_relation
+            return {
+                'ner': corenlp_dict['ner'],
+                'sentences': corenlp_dict['sentences'],
+                'relation': contains_relation,
+                'X-Parsed-By': JsreParser.JSRE_PARSER
+            }
 
         jsre_out_file = open(out_file, 'r')
         labels = jsre_out_file.readlines()
