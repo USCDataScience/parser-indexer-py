@@ -2,6 +2,7 @@ from __future__ import print_function
 
 import sys
 import json
+from utils import progress_bar
 from ioutils import read_lines
 from paper_parser import PaperParser
 from ads_parser import AdsParser
@@ -46,7 +47,8 @@ def process(in_file, in_list, out_file, tika_server_url, corenlp_server_url,
         files = read_lines(in_list)
 
     out_f = open(out_file, 'wb', 1)
-    for f in files:
+    progress = progress_bar('Process JGR papers')
+    for f in progress(files):
         ads_dict = ads_parser.parse(f)
         journal_dict = jgr_parser.parse(ads_dict['content'],
                                         ads_dict['metadata'])

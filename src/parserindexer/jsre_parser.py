@@ -8,10 +8,10 @@ import warnings
 import itertools
 import subprocess
 from utils import canonical_name
-from utils import canonical_target_name
 from ads_parser import AdsParser
 from corenlp_parser import CoreNLPParser
 from ioutils import read_lines
+from utils import progress_bar
 
 
 class JsreParser(CoreNLPParser):
@@ -174,7 +174,8 @@ def process(in_file, in_list, out_file, tika_server_url, corenlp_server_url,
         files = read_lines(in_list)
 
     out_f = open(out_file, 'wb', 1)
-    for f in files:
+    progress = progress_bar('Relation Extraction')
+    for f in progress(files):
         ads_dict = ads_parser.parse(f)
         jsre_dict = jsre_parser.parse(ads_dict['content'])
 

@@ -4,6 +4,7 @@ import re
 import sys
 import json
 from parser import Parser
+from utils import progress_bar
 from ioutils import read_lines
 from ads_parser import AdsParser
 from jsre_parser import JsreParser
@@ -80,6 +81,7 @@ def process(in_file, in_list, out_file, tika_server_url, corenlp_server_url,
         files = read_lines(in_list)
 
     out_f = open(out_file, 'wb', 1)
+    progress = progress_bar('Process journal papers')
     for f in files:
         ads_dict = ads_parser.parse(f)
         paper_dict = paper_parser.parse(ads_dict['content'],

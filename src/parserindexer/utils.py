@@ -1,4 +1,6 @@
 import re
+from progressbar import ProgressBar, ETA, Bar
+
 
 # Elements symbol table
 symtab = {
@@ -159,3 +161,7 @@ def canonical_target_name(name, id, targets, aliases):
         name = can_name[0]
 
     return re.sub(r"[\s_-]+", " ", name).title().replace(' ', '_')
+
+
+def progress_bar(message):
+    return ProgressBar(widgets=['%s: ' % message, Bar('='), ' ', ETA()])
