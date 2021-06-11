@@ -69,7 +69,7 @@ class AdsParser(TikaParser):
         ads_dict = self.query_ads_database(title)
 
         if len(ads_dict) == 0:
-            return ads_dict
+            return tika_dict
 
         # Add ADS records to the dictionary returned from TIKA parser
         tika_dict['metadata']['ads:primary_author'] = ads_dict['primary_author']
