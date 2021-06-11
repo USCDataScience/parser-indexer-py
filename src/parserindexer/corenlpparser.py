@@ -90,6 +90,7 @@ class CoreNLPParser(JournalParser):
         meta['sentences'] = output['sentences']
         return meta
 
+
 if __name__ == '__main__':
     cli_p = CliParser(CoreNLPParser)
     cli_p.add_argument('-c', '--corenlp-url', help="CoreNLP Server URL", default="http://localhost:9000")
