@@ -21,6 +21,9 @@ class CoreNLPParser(JournalParser):
             'outputFormat': 'json',
             'ner.useSUTime': False,  # dont want SUTime model
             'ner.applyNumericClassifiers': False, # Dont want numeric classifier
+            # Don't need fine grained recognition with corenlp built-in NER
+            # models
+            'ner.applyFineGrained': False
         }
         if kwargs.get('ner_model'): # set NER model from CLI
             if not os.path.exists(kwargs.get('ner_model')):
