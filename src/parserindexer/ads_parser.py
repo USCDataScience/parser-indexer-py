@@ -34,7 +34,10 @@ class AdsParser(TikaParser):
 
         if response.status_code != 200:
             raise RuntimeError('Failed accessing ADS database. The HTTP code '
-                               'is %d.' % response.status_code)
+                               'is %d.\nURL: %s\nHTTP request headers: %s\n'
+                               'HTTP request parameters: %s' %
+                               (response.status_code, self.ads_base_url,
+                                json.dumps(headers), json.dumps(params)))
 
         data = response.json()
         data_docs = data['response']['docs']
