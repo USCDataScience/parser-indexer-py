@@ -7,11 +7,13 @@ import json
 import warnings
 import itertools
 import subprocess
+from tqdm import tqdm
+from utils import LogUtil
+from ioutils import read_lines
 from utils import canonical_name
 from ads_parser import AdsParser
 from corenlp_parser import CoreNLPParser
-from ioutils import read_lines
-from tqdm import tqdm
+
 
 # For handling warnings as errors (i.e., warnings can be captured using
 # try-except).
@@ -167,8 +169,24 @@ class JsreParser(CoreNLPParser):
         }
 
 
-def process(in_file, in_list, out_file, tika_server_url, corenlp_server_url,
-            ner_model, jsre_root, jsre_model, jsre_tmp_dir, ads_url, ads_token):
+def process(in_file, in_list, out_file, log_file, tika_server_url,
+            corenlp_server_url, ner_model, jsre_root, jsre_model, jsre_tmp_dir,
+            ads_url, ads_token):
+    # Log input parameters
+    logger = LogUtil('lpsc-parser', log_file)
+    logger.info('Input parameters')
+    logger.info('in_file: %s' % in_file)
+    logger.info('in_list: %s' % in_list)
+    logger.info('out_file: %s' % out_file)
+    logger.info('tika_server_url: %s' % tika_server_url)
+    logger.info('corenlp_server_url: %s' % corenlp_server_url)
+    logger.info('ner_model: %s' % os.path.abspath(ner_model))
+    logger.info('jsre_root: %s' % os.path.abspath(jsre_root))
+    logger.info('jsre_model: %s' % os.path.abspath(jsre_model))
+    logger.info('jsre_tmp_dir: %s' % os.path.abspath(jsre_tmp_dir))
+    logger.info('ads_url: %s' % ads_url)
+    logger.info('ads_token: %s' % ads_token)
+
     if in_file and in_list:
         print('[ERROR] in_file and in_list cannot be provided simultaneously')
         sys.exit(1)
@@ -184,16 +202,20 @@ def process(in_file, in_list, out_file, tika_server_url, corenlp_server_url,
 
     out_f = open(out_file, 'wb', 1)
     for f in tqdm(files):
-        ads_dict = ads_parser.parse(f)
-        jsre_dict = jsre_parser.parse(ads_dict['content'])
+        try:
+            ads_dict = ads_parser.parse(f)
+            jsre_dict = jsre_parser.parse(ads_dict['content'])
 
-        ads_dict['metadata']['ner'] = jsre_dict['ner']
-        ads_dict['metadata']['rel'] = jsre_dict['relation']
-        ads_dict['metadata']['sentences'] = jsre_dict['sentences']
-        ads_dict['metadata']['X-Parsed-By'].append(jsre_dict['X-Parsed-By'])
+            ads_dict['metadata']['ner'] = jsre_dict['ner']
+            ads_dict['metadata']['rel'] = jsre_dict['relation']
+            ads_dict['metadata']['sentences'] = jsre_dict['sentences']
+            ads_dict['metadata']['X-Parsed-By'].append(jsre_dict['X-Parsed-By'])
 
-        out_f.write(json.dumps(ads_dict))
-        out_f.write('\n')
+            out_f.write(json.dumps(ads_dict))
+            out_f.write('\n')
+        except Exception as e:
+            logger.info('JSRE parser failed: %s' % os.path.abspath(f))
+            logger.error(e)
 
     out_f.close()
 
@@ -208,6 +230,10 @@ if __name__ == '__main__':
     input_parser.add_argument('-li', '--in_list', help='Path to input list')
     parser.add_argument('-o', '--out_file', required=True,
                         help='Path to output JSON file')
+    parser.add_argument('-l', '--log_file', default='./jsre-parser-log.txt',
+                        help='Log file that contains processing information. '
+                             'It is default to ./jsre-parser-log.txt unless '
+                             'otherwise specified.')
     parser.add_argument('-p', '--tika_server_url', required=False,
                         help='Tika server URL')
     parser.add_argument('-c', '--corenlp_server_url',
