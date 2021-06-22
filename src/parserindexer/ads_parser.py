@@ -5,6 +5,7 @@ import json
 import warnings
 import requests
 from tqdm import tqdm
+from utils import LogUtil
 from ioutils import read_lines
 from tika_parser import TikaParser
 
@@ -89,7 +90,17 @@ class AdsParser(TikaParser):
         return tika_dict
 
 
-def process(in_file, in_list, out_file, tika_server_url, ads_url, ads_token):
+def process(in_file, in_list, out_file, log_file, tika_server_url, ads_url,
+            ads_token):
+    # Log input parameters
+    logger = LogUtil('ads-parser', log_file)
+    logger.info('Input parameters')
+    logger.info('in_file: %s' % in_file)
+    logger.info('in_list: %s' % in_list)
+    logger.info('out_file: %s' % out_file)
+    logger.info('tika_server_url: %s' % tika_server_url)
+    logger.info('ads_url: %s' % ads_url)
+    logger.info('ads_token: %s' % ads_token)
     if in_file and in_list:
         print('[ERROR] in_file and in_list cannot be provided simultaneously')
         sys.exit(1)
@@ -103,10 +114,15 @@ def process(in_file, in_list, out_file, tika_server_url, ads_url, ads_token):
 
     out_f = open(out_file, 'wb', 1)
     for f in tqdm(files):
-        ads_dict = ads_parser.parse(f)
+        logger.info('Processing %s' % os.path.basename(f))
+        try:
+            ads_dict = ads_parser.parse(f)
 
-        out_f.write(json.dumps(ads_dict))
-        out_f.write('\n')
+            out_f.write(json.dumps(ads_dict))
+            out_f.write('\n')
+        except Exception as e:
+            logger.info('ADS parser failed: %s' % os.path.abspath(f))
+            logger.error(e)
 
     out_f.close()
 
@@ -121,6 +137,10 @@ def main():
     input_parser.add_argument('-li', '--in_list', help='Path to input list')
     parser.add_argument('-o', '--out_file', required=True,
                         help='Path to output JSON file')
+    parser.add_argument('-l', '--log_file', default='./ads-parser-log.txt',
+                        help='Log file that contains processing information. '
+                             'It is default to ./ads-parser-log.txt unless '
+                             'otherwise specified.')
     parser.add_argument('-p', '--tika_server_url', required=False,
                         help='Tika server URL')
     parser.add_argument('-a', '--ads_url',
