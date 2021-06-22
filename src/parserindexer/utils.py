@@ -1,4 +1,5 @@
 import re
+import logging
 from progressbar import ProgressBar, ETA, Bar
 
 
@@ -165,3 +166,22 @@ def canonical_target_name(name, id, targets, aliases):
 
 def progress_bar(message):
     return ProgressBar(widgets=['%s: ' % message, Bar('='), ' ', ETA()])
+
+
+class LogUtil(object):
+    def __init__(self, logger_name, log_file, filemode='w'):
+        fmt = logging.Formatter(fmt='%(asctime)-15s: %(message)s',
+                                datefmt='[%Y-%m-%d %H:%M:%S]')
+        handler = logging.FileHandler(log_file, mode=filemode)
+        handler.setFormatter(fmt)
+        logger = logging.getLogger(logger_name)
+        logger.setLevel(logging.INFO)
+        logger.addHandler(handler)
+
+        self.logger = logger
+
+    def info(self, message):
+        self.logger.info(message)
+
+    def error(self, exception):
+        self.logger.error(exception, exc_info=True)
