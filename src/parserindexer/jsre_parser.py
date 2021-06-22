@@ -123,7 +123,7 @@ class JsreParser(CoreNLPParser):
                 'sentences': corenlp_dict['sentences'],
                 'relation': contains_relation,
                 'X-Parsed-By': JsreParser.JSRE_PARSER
-            }
+            } 
 
         jsre_out_file = open(out_file, 'r')
         labels = jsre_out_file.readlines()
