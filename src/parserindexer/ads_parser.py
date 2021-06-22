@@ -8,6 +8,10 @@ from ioutils import read_lines
 from utils import progress_bar
 from tika_parser import TikaParser
 
+# For handling warnings as errors (i.e., warnings can be captured using
+# try-except).
+warnings.filterwarnings('error')
+
 
 class AdsParser(TikaParser):
     """ The Ads parser class utilizes the RESTful API from the Astrophysics

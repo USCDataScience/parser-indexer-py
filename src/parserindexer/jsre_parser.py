@@ -13,6 +13,10 @@ from corenlp_parser import CoreNLPParser
 from ioutils import read_lines
 from utils import progress_bar
 
+# For handling warnings as errors (i.e., warnings can be captured using
+# try-except).
+warnings.filterwarnings('error')
+
 
 class JsreParser(CoreNLPParser):
     """ Relation extraction using JSRE package. The JsreParser class depends on
