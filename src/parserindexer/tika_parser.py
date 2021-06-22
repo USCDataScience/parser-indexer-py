@@ -4,8 +4,8 @@ import os
 import sys
 import json
 import tika
+from tqdm import tqdm
 from parser import Parser
-from utils import progress_bar
 from ioutils import read_lines
 from tika import parser as tk_parser
 
@@ -58,8 +58,7 @@ def process(in_file, in_list, out_file, tika_server_url):
         files = read_lines(in_list)
 
     out_f = open(out_file, 'wb', 1)
-    progress = progress_bar('TIKA parser')
-    for f in files:
+    for f in tqdm(files):
         tika_dict = tika_parser.parse(f)
 
         out_f.write(json.dumps(tika_dict))

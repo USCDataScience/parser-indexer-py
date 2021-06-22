@@ -4,8 +4,8 @@ import sys
 import json
 import warnings
 import requests
+from tqdm import tqdm
 from ioutils import read_lines
-from utils import progress_bar
 from tika_parser import TikaParser
 
 # For handling warnings as errors (i.e., warnings can be captured using
@@ -102,8 +102,7 @@ def process(in_file, in_list, out_file, tika_server_url, ads_url, ads_token):
         files = read_lines(in_list)
 
     out_f = open(out_file, 'wb', 1)
-    progress = progress_bar('ADS parser')
-    for f in progress(files):
+    for f in tqdm(files):
         ads_dict = ads_parser.parse(f)
 
         out_f.write(json.dumps(ads_dict))

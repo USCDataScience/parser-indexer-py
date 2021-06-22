@@ -164,10 +164,6 @@ def canonical_target_name(name, id, targets, aliases):
     return re.sub(r"[\s_-]+", " ", name).title().replace(' ', '_')
 
 
-def progress_bar(message):
-    return ProgressBar(widgets=['%s: ' % message, Bar('='), ' ', ETA()])
-
-
 class LogUtil(object):
     def __init__(self, logger_name, log_file, filemode='w'):
         fmt = logging.Formatter(fmt='%(asctime)-15s: %(message)s',

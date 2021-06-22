@@ -5,8 +5,8 @@ import sys
 import json
 import urllib
 import itertools
+from tqdm import tqdm
 from parser import Parser
-from utils import progress_bar
 from ioutils import read_lines
 from ads_parser import AdsParser
 from pycorenlp import StanfordCoreNLP
@@ -121,8 +121,7 @@ def process(in_file, in_list, out_file, tika_server_url, corenlp_server_url,
         files = read_lines(in_list)
 
     out_f = open(out_file, 'wb', 1)
-    progress = progress_bar('Named Entity Recognition')
-    for f in progress(files):
+    for f in tqdm(files):
         ads_dict = ads_parser.parse(f)
         corenlp_dict = corenlp_parser.parse(ads_dict['content'])
 

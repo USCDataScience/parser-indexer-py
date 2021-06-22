@@ -4,8 +4,8 @@ import os
 import re
 import sys
 import json
+from tqdm import tqdm
 from utils import LogUtil
-from utils import progress_bar
 from ioutils import read_lines
 from paper_parser import PaperParser
 from ads_parser import AdsParser
@@ -83,8 +83,7 @@ def process(in_file, in_list, out_file, log_file, tika_server_url,
         files = read_lines(in_list)
 
     out_f = open(out_file, 'wb', 1)
-    progress = progress_bar('Process LPSC abstract')
-    for f in progress(files):
+    for f in tqdm(files):
         logger.info('Processing %s' % os.path.basename(f))
         try:
             ads_dict = ads_parser.parse(f)

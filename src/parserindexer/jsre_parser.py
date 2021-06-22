@@ -11,7 +11,7 @@ from utils import canonical_name
 from ads_parser import AdsParser
 from corenlp_parser import CoreNLPParser
 from ioutils import read_lines
-from utils import progress_bar
+from tqdm import tqdm
 
 # For handling warnings as errors (i.e., warnings can be captured using
 # try-except).
@@ -183,8 +183,7 @@ def process(in_file, in_list, out_file, tika_server_url, corenlp_server_url,
         files = read_lines(in_list)
 
     out_f = open(out_file, 'wb', 1)
-    progress = progress_bar('Relation Extraction')
-    for f in progress(files):
+    for f in tqdm(files):
         ads_dict = ads_parser.parse(f)
         jsre_dict = jsre_parser.parse(ads_dict['content'])
 
