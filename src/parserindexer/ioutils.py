@@ -15,8 +15,8 @@ def read_lines(listfile, skip_blank=True, skip_comments=True):
             paths = filter(lambda x: x, paths)
         if skip_comments:
             paths = filter(lambda x: not x.startswith("#"), paths)
-        for p in paths:
-            yield p
+
+        return paths
 
 
 def read_jsonlines(filename):
