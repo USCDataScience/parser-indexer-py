@@ -66,20 +66,26 @@ def process(in_file, in_list, out_file, log_file, tika_server_url,
 
     out_f = open(out_file, 'wb', 1)
     for f in tqdm(files):
-        ads_dict = ads_parser.parse(f)
-        journal_dict = jgr_parser.parse(ads_dict['content'],
-                                        ads_dict['metadata'])
-        jsre_dict = jsre_parser.parse(journal_dict['cleaned_content'])
+        try:
+            ads_dict = ads_parser.parse(f)
+            journal_dict = jgr_parser.parse(ads_dict['content'],
+                                            ads_dict['metadata'])
+            jsre_dict = jsre_parser.parse(journal_dict['cleaned_content'])
 
-        ads_dict['content_ann_s'] = journal_dict['cleaned_content']
-        ads_dict['references'] = journal_dict['references']
-        ads_dict['metadata']['ner'] = jsre_dict['ner']
-        ads_dict['metadata']['rel'] = jsre_dict['relation']
-        ads_dict['metadata']['sentences'] = jsre_dict['sentences']
-        ads_dict['metadata']['X-Parsed-By'] = jsre_dict['X-Parsed-By']
+            ads_dict['content_ann_s'] = journal_dict['cleaned_content']
+            ads_dict['references'] = journal_dict['references']
+            ads_dict['metadata']['ner'] = jsre_dict['ner']
+            ads_dict['metadata']['rel'] = jsre_dict['relation']
+            ads_dict['metadata']['sentences'] = jsre_dict['sentences']
+            ads_dict['metadata']['X-Parsed-By'] = jsre_dict['X-Parsed-By']
 
-        out_f.write(json.dumps(ads_dict))
-        out_f.write('\n')
+            out_f.write(json.dumps(ads_dict))
+            out_f.write('\n')
+        except UserWarning as u:
+            logger.info(u)
+        except Exception as e:
+            logger.info('JGR parser failed: %s' % os.path.abspath(f))
+            logger.error(e)
 
     out_f.close()
 
