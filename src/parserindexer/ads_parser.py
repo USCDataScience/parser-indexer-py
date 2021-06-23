@@ -68,10 +68,8 @@ class AdsParser(TikaParser):
 
         if response.status_code != 200:
             raise RuntimeError('Failed accessing ADS database. The HTTP code '
-                               'is %d.\nURL: %s\nHTTP request headers: %s\n'
-                               'HTTP request parameters: %s' %
-                               (response.status_code, self.ads_base_url,
-                                json.dumps(headers), json.dumps(params)))
+                               'is %d. Grobid title is %s' %
+                               (response.status_code, title))
 
         data = response.json()
         data_docs = data['response']['docs']
