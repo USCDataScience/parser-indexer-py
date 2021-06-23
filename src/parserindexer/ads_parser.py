@@ -73,12 +73,13 @@ class AdsParser(TikaParser):
         ads_dict = dict()
 
         if len(data_docs) == 0:
-            warnings.warn('0 document found in the ADS database')
+            warnings.warn('[Warning] 0 document found in the ADS database')
             return ads_dict
 
         if len(data_docs) > 1:
-            warnings.warn('There are multiple documents returned from the ADS '
-                          'database, and we are using the first document.')
+            warnings.warn('[Warning] There are multiple documents returned '
+                          'from the ADS database, and we are using the first '
+                          'document.')
 
         data_docs = data_docs[0]
 
@@ -95,7 +96,11 @@ class AdsParser(TikaParser):
         tika_dict = super(AdsParser, self).parse(file_path)
 
         # Get the title of the paper from grobid
-        title = tika_dict['metadata']['grobid:header_Title']
+        if 'grobid:header_Title' in tika_dict['metadata'].keys():
+            title = tika_dict['metadata']['grobid:header_Title']
+        else:
+            warnings.warn('[Warning] grobid:header_Title field not found')
+            return tika_dict
 
         # Query the ADS database
         ads_dict = self.query_ads_database(title)
