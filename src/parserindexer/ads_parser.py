@@ -24,11 +24,34 @@ class AdsParser(TikaParser):
         self.ads_token = ads_token
         self.ads_base_url = ads_base_url
 
+    @staticmethod
+    def escape_solr_chars(text):
+        escape_rules = {
+            '+': r'\+',
+            '-': r'\-',
+            '&&': r'\&&',
+            '||': r'\||',
+            '!': r'\!',
+            '(': r'\(',
+            ')': r'\)',
+            '"': r'\"',
+            '~': r'\~',
+            '*': r'\*',
+            '?': r'\?',
+            ':': r'\:'
+        }
+
+        for c, r in escape_rules.items():
+            text = text.replace(c, r)
+
+        return text
+
     def query_ads_database(self, title):
         headers = {
             'Authorization': 'Bearer %s' % self.ads_token
         }
 
+        title = self.escape_solr_chars(title)
         params = (
             ('q', 'title:%s' % title),
             ('fl', 'first_author,author,aff,pubdate,year,pub')
