@@ -14,6 +14,9 @@ from utils import canonical_name
 from ads_parser import AdsParser
 from corenlp_parser import CoreNLPParser
 
+# Always printing matching warnings
+warnings.filterwarnings('always')
+
 
 class JsreParser(CoreNLPParser):
     """ Relation extraction using JSRE package. The JsreParser class depends on
