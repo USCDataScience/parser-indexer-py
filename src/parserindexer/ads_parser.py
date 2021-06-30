@@ -53,9 +53,12 @@ class AdsParser(TikaParser):
 
     @staticmethod
     def special_rules(text):
-        # 1. remove ? in the title
+        # Rule 1: remove ? in the title
         if '?' in text:
             text = text.replace('?', '')
+
+        # Rule 2: convert title to all lower cases
+        text = text.lower()
 
         return text
 
