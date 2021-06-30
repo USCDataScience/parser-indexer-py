@@ -99,6 +99,7 @@ def process(in_file, in_list, out_file, log_file, tika_server_url,
             ads_dict['metadata']['X-Parsed-By'] = jsre_dict['X-Parsed-By']
 
             out_f.write(json.dumps(ads_dict))
+            out_f.write('\n')
         except Exception as e:
             logger.info('LPSC parser failed: %s' % os.path.abspath(f))
             logger.error(e)
