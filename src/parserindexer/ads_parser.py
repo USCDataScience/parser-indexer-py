@@ -9,6 +9,7 @@ from tqdm import tqdm
 from utils import LogUtil
 from ioutils import read_lines
 from tika_parser import TikaParser
+from collections import OrderedDict
 
 # For handling warnings as errors (i.e., warnings can be captured using
 # try-except).
@@ -27,25 +28,26 @@ class AdsParser(TikaParser):
 
     @staticmethod
     def escape_solr_chars(text):
-        escape_rules = {
-            '+': r'\+',
-            '-': r'\-',
-            '&&': r'\&&',
-            '||': r'\||',
-            '!': r'\!',
-            '(': r'\(',
-            ')': r'\)',
-            '{': r'\{',
-            '}': r'\}',
-            '[': r'\[',
-            ']': r'\]',
-            '"': r'\"',
-            '~': r'\~',
-            '*': r'\*',
-            '?': r'\?',
-            ':': r'\:',
-            '/': r'\/'
-        }
+        escape_rules = OrderedDict()
+        escape_rules['\\'] = r'\\'  # Note "\" must be escaped first.
+        escape_rules['+'] = r'\+'
+        escape_rules['-'] = r'\-'
+        escape_rules['&&'] = r'\&&'
+        escape_rules['||'] = r'\||'
+        escape_rules['!'] = r'\!'
+        escape_rules['('] = r'\('
+        escape_rules[')'] = r'\)'
+        escape_rules['{'] = r'\{'
+        escape_rules['}'] = r'\}'
+        escape_rules['['] = r'\['
+        escape_rules[']'] = r'\]'
+        escape_rules['^'] = r'\^'
+        escape_rules['"'] = r'\"'
+        escape_rules['~'] = r'\~'
+        escape_rules['*'] = r'\*'
+        escape_rules['?'] = r'\?'
+        escape_rules[':'] = r'\:'
+        escape_rules['/'] = r'r\/'
 
         for c, r in escape_rules.items():
             text = text.replace(c, r)
