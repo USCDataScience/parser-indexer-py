@@ -15,11 +15,6 @@ from ads_parser import AdsParser
 from corenlp_parser import CoreNLPParser
 
 
-# For handling warnings as errors (i.e., warnings can be captured using
-# try-except).
-warnings.filterwarnings('error')
-
-
 class JsreParser(CoreNLPParser):
     """ Relation extraction using JSRE package. The JsreParser class depends on
     the outputs provided by the CoreNLPParser class.
@@ -213,8 +208,6 @@ def process(in_file, in_list, out_file, log_file, tika_server_url,
 
             out_f.write(json.dumps(ads_dict))
             out_f.write('\n')
-        except UserWarning as u:
-            logger.info(u)
         except Exception as e:
             logger.info('JSRE parser failed: %s' % os.path.abspath(f))
             logger.error(e)

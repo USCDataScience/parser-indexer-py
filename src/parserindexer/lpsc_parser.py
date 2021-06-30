@@ -53,7 +53,7 @@ def process(in_file, in_list, out_file, log_file, tika_server_url,
             corenlp_server_url, ner_model, jsre_root, jsre_model, jsre_tmp_dir,
             ads_url, ads_token):
     # Log input parameters
-    logger = LogUtil('lpsc-parser', log_file)
+    logger = LogUtil(log_file)
     logger.info('Input parameters')
     logger.info('in_file: %s' % in_file)
     logger.info('in_list: %s' % in_list)
@@ -99,9 +99,6 @@ def process(in_file, in_list, out_file, log_file, tika_server_url,
             ads_dict['metadata']['X-Parsed-By'] = jsre_dict['X-Parsed-By']
 
             out_f.write(json.dumps(ads_dict))
-            out_f.write('\n')
-        except UserWarning as u:
-            logger.info(u)
         except Exception as e:
             logger.info('LPSC parser failed: %s' % os.path.abspath(f))
             logger.error(e)

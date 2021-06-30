@@ -11,10 +11,6 @@ from ioutils import read_lines
 from tika_parser import TikaParser
 from collections import OrderedDict
 
-# For handling warnings as errors (i.e., warnings can be captured using
-# try-except).
-warnings.filterwarnings('error')
-
 
 class AdsParser(TikaParser):
     """ The Ads parser class utilizes the RESTful API from the Astrophysics
@@ -55,6 +51,8 @@ class AdsParser(TikaParser):
         return text
 
     def query_ads_database(self, title):
+        ads_dict = dict()
+
         headers = {
             'Authorization': 'Bearer %s' % self.ads_token
         }
@@ -69,13 +67,13 @@ class AdsParser(TikaParser):
                                 params=params)
 
         if response.status_code != 200:
-            raise RuntimeError('Failed accessing ADS database. The HTTP code '
-                               'is %d. Grobid title is %s' %
-                               (response.status_code, title))
+            warnings.warn('[WARNING] Failed accessing ADS database. The HTTP '
+                          'code is %d. Grobid title is %s' %
+                          (response.status_code, title))
+            return ads_dict
 
         data = response.json()
         data_docs = data['response']['docs']
-        ads_dict = dict()
 
         if len(data_docs) == 0:
             warnings.warn('[Warning] 0 document found in the ADS database')
@@ -109,7 +107,6 @@ class AdsParser(TikaParser):
 
         # Query the ADS database
         ads_dict = self.query_ads_database(title)
-
         if len(ads_dict) == 0:
             return tika_dict
 
@@ -154,8 +151,6 @@ def process(in_file, in_list, out_file, log_file, tika_server_url, ads_url,
 
             out_f.write(json.dumps(ads_dict))
             out_f.write('\n')
-        except UserWarning as u:
-            logger.info(u)
         except Exception as e:
             logger.info('ADS parser failed: %s' % os.path.abspath(f))
             logger.error(e)

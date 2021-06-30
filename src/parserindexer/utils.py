@@ -1,7 +1,9 @@
 import re
 import logging
-from progressbar import ProgressBar, ETA, Bar
 
+# Redirect warnings from stderr to Python standard logging (e.g., warnings
+# raised by `warnings.warn()` will be directly write to the log file)
+logging.captureWarnings(True)
 
 # Elements symbol table
 symtab = {
@@ -125,6 +127,7 @@ symtab = {
     'Zr': 'Zirconium'
 }
 
+
 def canonical_name(name):
     """
     Gets canonical name
@@ -156,8 +159,8 @@ def canonical_target_name(name, id, targets, aliases):
                         (a['arg1_s'] in all_targets))]
     if len(name_aliases) > 0:
         # Ideally there is only one; let's use the first one
-        can_name = [t['name'] for t in targets \
-                        if t['annotation_id_s'] == name_aliases[0]]
+        can_name = [t['name'] for t in targets
+                    if t['annotation_id_s'] == name_aliases[0]]
         print('Mapping <%s> to <%s>' % (name, can_name[0]))
         name = can_name[0]
 
@@ -165,12 +168,12 @@ def canonical_target_name(name, id, targets, aliases):
 
 
 class LogUtil(object):
-    def __init__(self, logger_name, log_file, filemode='w'):
+    def __init__(self, log_file, filemode='w'):
         fmt = logging.Formatter(fmt='%(asctime)-15s: %(message)s',
                                 datefmt='[%Y-%m-%d %H:%M:%S]')
         handler = logging.FileHandler(log_file, mode=filemode)
         handler.setFormatter(fmt)
-        logger = logging.getLogger(logger_name)
+        logger = logging.getLogger('py.warnings')
         logger.setLevel(logging.INFO)
         logger.addHandler(handler)
 

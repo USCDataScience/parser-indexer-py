@@ -145,8 +145,6 @@ def process(in_file, in_list, out_file, log_file, tika_server_url,
 
             out_f.write(json.dumps(ads_dict))
             out_f.write('\n')
-        except UserWarning as u:
-            logger.info(u)
         except Exception as e:
             logger.info('CoreNLP parser failed: %s' % os.path.abspath(f))
             logger.error(e)
