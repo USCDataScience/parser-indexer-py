@@ -87,6 +87,8 @@ def process(in_file, in_list, out_file, log_file, tika_server_url,
         logger.info('Processing %s' % os.path.basename(f))
         try:
             ads_dict = ads_parser.parse(f)
+            logger.info('Document title: %s' %
+                        ads_dict['metadata']['grobid:header_Title'])
             lpsc_dict = lpsc_parser.parse(ads_dict['content'],
                                           ads_dict['metadata'])
             jsre_dict = jsre_parser.parse(lpsc_dict['cleaned_content'])
