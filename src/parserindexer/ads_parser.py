@@ -44,7 +44,7 @@ class AdsParser(TikaParser):
         escape_rules['~'] = r'\~'
         escape_rules['*'] = r'\*'
         escape_rules[':'] = r'\:'
-        escape_rules['/'] = r'r\/'
+        escape_rules['/'] = r'\/'
 
         for c, r in escape_rules.items():
             text = text.replace(c, r)
@@ -70,6 +70,7 @@ class AdsParser(TikaParser):
         }
 
         title = self.escape_solr_chars(title)
+        title = self.special_rules(title)
         params = (
             ('q', 'title:%s' % title),
             ('fl', 'first_author,author,aff,pubdate,year,pub')
