@@ -84,13 +84,17 @@ def process(in_file, in_list, out_file, log_file, tika_server_url,
 
     out_f = open(out_file, 'wb', 1)
     for f in tqdm(files):
-        logger.info('Processing %s' % os.path.basename(f))
         try:
-            ads_dict = ads_parser.parse(f)
+            base_name = os.path.basename(f)
+            logger.info('Processing %s' % base_name)
+            base_name = base_name.split('.')[0]
+            year, abs_num = base_name.split('_')
+            query_dict = {'lpsc_query_strategy': {
+                'year': year,
+                'abstract_number': abs_num
+            }}
 
-            if 'grobid:header_Title' in ads_dict['metadata'].keys():
-                logger.info('Document title: %s' %
-                            ads_dict['metadata']['grobid:header_Title'])
+            ads_dict = ads_parser.parse(f, query_dict)
             lpsc_dict = lpsc_parser.parse(ads_dict['content'],
                                           ads_dict['metadata'])
             jsre_dict = jsre_parser.parse(lpsc_dict['cleaned_content'])

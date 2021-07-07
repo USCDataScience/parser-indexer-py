@@ -84,26 +84,53 @@ class AdsParser(TikaParser):
         text = re.sub(r'Lunar and Planetary Science [CDILVXM]+ .+\.pdf$', '',
                       text, flags=re.IGNORECASE)
 
-        # Rule 5: If the title contains the keyword "NEAR" and "NOT", we add
-        # double quotes around the title to restrict the Solr query to do exact
-        # match.
-        if 'near' in text or 'not' in text:
-            text = '"%s"' % text
-
         return text
 
-    def query_ads_database(self, title):
+    @staticmethod
+    def construct_query_string(tika_dict, query_dict=None):
+        if query_dict is None:
+            query_str = AdsParser.construct_title_query_string(tika_dict)
+        elif 'lpsc_query_strategy' in query_dict.keys():
+            query_str = AdsParser.construct_lpsc_query_string(query_dict)
+        else:
+            raise RuntimeError('Unexpected query dictionary structure')
+
+        return query_str
+
+    @staticmethod
+    def construct_title_query_string(tika_dict):
+        if 'grobid:header_Title' in tika_dict['metadata'].keys():
+            query_str = tika_dict['metadata']['grobid:header_Title']
+            query_str = AdsParser.escape_solr_chars(query_str)
+            query_str = AdsParser.special_rules(query_str)
+            query_str = 'title:%s' % query_str
+        else:
+            query_str = ''
+
+        return query_str
+
+    @staticmethod
+    def construct_lpsc_query_string(query_dict):
+        lpsc_dict = query_dict['lpsc_query_strategy']
+        year = lpsc_dict['year']
+        venue = '"Lunar and Planetary Science Conference"'
+        abstract_number = lpsc_dict['abstract_number']
+
+        query_str = 'year:%s AND page:%s AND pub:%s' % \
+                    (year, abstract_number, venue)
+
+        return query_str
+
+    def query_ads_database(self, query_str):
         ads_dict = dict()
 
         headers = {
             'Authorization': 'Bearer %s' % self.ads_token
         }
 
-        title = self.escape_solr_chars(title)
-        title = self.special_rules(title)
         params = (
-            ('q', 'title:%s' % title),
-            ('fl', 'first_author,author,aff,pubdate,year,pub')
+            ('q', query_str),
+            ('fl', 'first_author,author,aff,pubdate,year,pub,title')
         )
 
         response = requests.get(self.ads_base_url, headers=headers,
@@ -111,8 +138,8 @@ class AdsParser(TikaParser):
 
         if response.status_code != 200:
             warnings.warn('[WARNING] Failed accessing ADS database. The HTTP '
-                          'code is %d. Grobid title is %s' %
-                          (response.status_code, title))
+                          'code is %d. The query string is %s' %
+                          (response.status_code, query_str))
             return ads_dict
 
         data = response.json()
@@ -126,6 +153,7 @@ class AdsParser(TikaParser):
             warnings.warn('[Warning] There are multiple documents returned '
                           'from the ADS database, and we are using the first '
                           'document.')
+            warnings.warn(json.dumps(data_docs['title']))
 
         data_docs = data_docs[0]
 
@@ -138,18 +166,15 @@ class AdsParser(TikaParser):
 
         return ads_dict
 
-    def parse(self, file_path):
+    def parse(self, file_path, query_dict=None):
         tika_dict = super(AdsParser, self).parse(file_path)
-
-        # Get the title of the paper from grobid
-        if 'grobid:header_Title' in tika_dict['metadata'].keys():
-            title = tika_dict['metadata']['grobid:header_Title']
-        else:
-            warnings.warn('[Warning] grobid:header_Title field not found')
+        query_str = self.construct_query_string(tika_dict, query_dict)
+        if len(query_str) == 0:
+            warnings.warn('[WARNING] grobid title not found')
             return tika_dict
 
         # Query the ADS database
-        ads_dict = self.query_ads_database(title)
+        ads_dict = self.query_ads_database(query_str)
         if len(ads_dict) == 0:
             return tika_dict
 
