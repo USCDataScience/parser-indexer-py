@@ -79,6 +79,10 @@ class AdsParser(TikaParser):
         # We need to remove ". K" before searching the ADS database.
         text = re.sub(r'\. \w$', '', text)
 
+        # Rule 4: Remove LPSC header in grobid titles
+        text = re.sub(r'Lunar and Planetary Science [CDILVXM]+ .+\.pdf$', '',
+                      text, flags=re.IGNORECASE)
+
         return text
 
     def query_ads_database(self, title):
