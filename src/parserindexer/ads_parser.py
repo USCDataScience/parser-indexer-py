@@ -46,6 +46,7 @@ class AdsParser(TikaParser):
         escape_rules['*'] = r'\*'
         escape_rules[':'] = r'\:'
         escape_rules['/'] = r'\/'
+        escape_rules['"'] = r'\"'
 
         for c, r in escape_rules.items():
             text = text.replace(c, r)
