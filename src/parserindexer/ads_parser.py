@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 import os
+import re
 import sys
 import json
 import warnings
@@ -60,6 +61,24 @@ class AdsParser(TikaParser):
         # Rule 2: convert title to all lower cases
         text = text.lower()
 
+        # Rule 3: When a title contains a period at the end, grobid tool
+        # consistently extract the title with the period and the first character
+        # of the author name.
+        # For example, the title, author names, and affiliations of a LPSC
+        # abstract (1998_1589.pdf) look like below:
+        # IMPLICATIONS OF THE APPARENT ABSENCE OF MAARS IN VIKING ORBITER
+        # IMAGERY. K. L. Mitchell and L. Wilson, Environmental Science
+        # Department, Institute of Environmental and Natural Sciences,
+        # Lancaster University, Lancaster LA1 4YQ, UK
+        # (K.L.Mitchell@lancaster.ac.uk).
+        #
+        # The title extracted by the grobid tool is:
+        # IMPLICATIONS OF THE APPARENT ABSENCE OF MAARS IN VIKING ORBITER
+        # IMAGERY. K
+        #
+        # We need to remove ". K" before searching the ADS database.
+        text = re.sub(r'\. \w$', '', text)
+
         return text
 
     def query_ads_database(self, title):
@@ -72,7 +91,7 @@ class AdsParser(TikaParser):
         title = self.escape_solr_chars(title)
         title = self.special_rules(title)
         params = (
-            ('q', 'title:%s' % title),
+            ('q', 'title:"%s"' % title),
             ('fl', 'first_author,author,aff,pubdate,year,pub')
         )
 
