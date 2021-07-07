@@ -84,6 +84,12 @@ class AdsParser(TikaParser):
         text = re.sub(r'Lunar and Planetary Science [CDILVXM]+ .+\.pdf$', '',
                       text, flags=re.IGNORECASE)
 
+        # Rule 5: If the title contains the keyword "NEAR" and "NOT", we add
+        # double quotes around the title to restrict the Solr query to do exact
+        # match.
+        if 'near' in text or 'not' in text:
+            text = '"%s"' % text
+
         return text
 
     def query_ads_database(self, title):
@@ -96,7 +102,7 @@ class AdsParser(TikaParser):
         title = self.escape_solr_chars(title)
         title = self.special_rules(title)
         params = (
-            ('q', 'title:"%s"' % title),
+            ('q', 'title:%s' % title),
             ('fl', 'first_author,author,aff,pubdate,year,pub')
         )
 
