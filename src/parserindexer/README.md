@@ -34,7 +34,7 @@ regular expression matches to remove contents specific (e.g., abstract id, confe
 The JGR parser is created for the papers from Journal of Geophysical Research. 
 
 
-The class diagram of the parsers are shown below:
+The class diagram of the parsers is shown below:
 
 ![MTE Parser class diagram](https://user-images.githubusercontent.com/57238811/125823293-50bef515-6713-4c2d-884e-da80810652e2.png)
 
