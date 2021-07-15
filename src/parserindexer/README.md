@@ -10,7 +10,7 @@ The base parser that all parsers should inherit.
 [TIKA Parser](https://github.com/USCDataScience/parser-indexer-py/blob/master/src/parserindexer/tika_parser.py): 
 The TIKA parser utilizes Apache TIKA service to convert PDF files to text files. 
 
-[ADS Parser][https://github.com/USCDataScience/parser-indexer-py/blob/master/src/parserindexer/ads_parser.py]:
+[ADS Parser](https://github.com/USCDataScience/parser-indexer-py/blob/master/src/parserindexer/ads_parser.py):
 The ADS parser utilizes the search API of the Astrophysics Data System to extract information including title, author, 
 primary author, affiliation, publication venue, and publication date.
 
