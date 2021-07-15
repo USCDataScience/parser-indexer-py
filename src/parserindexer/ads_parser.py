@@ -1,12 +1,19 @@
 from __future__ import print_function
 
+import os
+import re
 import sys
 import json
 import warnings
 import requests
+from tqdm import tqdm
+from utils import LogUtil
 from ioutils import read_lines
-from utils import progress_bar
 from tika_parser import TikaParser
+from collections import OrderedDict
+
+# Always printing matching warnings
+warnings.filterwarnings('always')
 
 
 class AdsParser(TikaParser):
@@ -19,37 +26,134 @@ class AdsParser(TikaParser):
         self.ads_token = ads_token
         self.ads_base_url = ads_base_url
 
-    def query_ads_database(self, title):
+    @staticmethod
+    def escape_solr_chars(text):
+        escape_rules = OrderedDict()
+        escape_rules['\\'] = r'\\'  # Note "\" must be escaped first.
+        escape_rules['+'] = r'\+'
+        escape_rules['-'] = r'\-'
+        escape_rules['&&'] = r'\&&'
+        escape_rules['||'] = r'\||'
+        escape_rules['!'] = r'\!'
+        escape_rules['('] = r'\('
+        escape_rules[')'] = r'\)'
+        escape_rules['{'] = r'\{'
+        escape_rules['}'] = r'\}'
+        escape_rules['['] = r'\['
+        escape_rules[']'] = r'\]'
+        escape_rules['^'] = r'\^'
+        escape_rules['~'] = r'\~'
+        escape_rules['*'] = r'\*'
+        escape_rules[':'] = r'\:'
+        escape_rules['/'] = r'\/'
+        escape_rules['"'] = r'\"'
+
+        for c, r in escape_rules.items():
+            text = text.replace(c, r)
+
+        return text
+
+    @staticmethod
+    def special_rules(text):
+        # Rule 1: remove ? in the title
+        if '?' in text:
+            text = text.replace('?', '')
+
+        # Rule 2: convert title to all lower cases
+        text = text.lower()
+
+        # Rule 3: When a title contains a period at the end, grobid tool
+        # consistently extract the title with the period and the first character
+        # of the author name.
+        # For example, the title, author names, and affiliations of a LPSC
+        # abstract (1998_1589.pdf) look like below:
+        # IMPLICATIONS OF THE APPARENT ABSENCE OF MAARS IN VIKING ORBITER
+        # IMAGERY. K. L. Mitchell and L. Wilson, Environmental Science
+        # Department, Institute of Environmental and Natural Sciences,
+        # Lancaster University, Lancaster LA1 4YQ, UK
+        # (K.L.Mitchell@lancaster.ac.uk).
+        #
+        # The title extracted by the grobid tool is:
+        # IMPLICATIONS OF THE APPARENT ABSENCE OF MAARS IN VIKING ORBITER
+        # IMAGERY. K
+        #
+        # We need to remove ". K" before searching the ADS database.
+        text = re.sub(r'\. \w$', '', text)
+
+        # Rule 4: Remove LPSC header in grobid titles
+        text = re.sub(r'Lunar and Planetary Science [CDILVXM]+ .+\.pdf$', '',
+                      text, flags=re.IGNORECASE)
+
+        return text
+
+    @staticmethod
+    def construct_query_string(tika_dict, query_dict=None):
+        if query_dict is None:
+            query_str = AdsParser.construct_title_query_string(tika_dict)
+        elif 'lpsc_query_strategy' in query_dict.keys():
+            query_str = AdsParser.construct_lpsc_query_string(query_dict)
+        else:
+            raise RuntimeError('Unexpected query dictionary structure')
+
+        return query_str
+
+    @staticmethod
+    def construct_title_query_string(tika_dict):
+        if 'grobid:header_Title' in tika_dict['metadata'].keys():
+            query_str = tika_dict['metadata']['grobid:header_Title']
+            query_str = AdsParser.escape_solr_chars(query_str)
+            query_str = AdsParser.special_rules(query_str)
+            query_str = 'title:%s' % query_str
+        else:
+            query_str = ''
+
+        return query_str
+
+    @staticmethod
+    def construct_lpsc_query_string(query_dict):
+        lpsc_dict = query_dict['lpsc_query_strategy']
+        year = lpsc_dict['year']
+        venue = '"Lunar and Planetary Science Conference"'
+        abstract_number = lpsc_dict['abstract_number']
+
+        query_str = 'year:%s AND page:%s AND pub:%s' % \
+                    (year, abstract_number, venue)
+
+        return query_str
+
+    def query_ads_database(self, query_str):
+        ads_dict = dict()
+
         headers = {
             'Authorization': 'Bearer %s' % self.ads_token
         }
 
         params = (
-            ('q', 'title:%s' % title),
-            ('fl', 'first_author,author,aff,pubdate,year,pub')
+            ('q', query_str),
+            ('fl', 'first_author,author,aff,pubdate,year,pub,title')
         )
 
         response = requests.get(self.ads_base_url, headers=headers,
                                 params=params)
 
         if response.status_code != 200:
-            raise RuntimeError('Failed accessing ADS database. The HTTP code '
-                               'is %d.\nURL: %s\nHTTP request headers: %s\n'
-                               'HTTP request parameters: %s' %
-                               (response.status_code, self.ads_base_url,
-                                json.dumps(headers), json.dumps(params)))
+            warnings.warn('[WARNING] Failed accessing ADS database. The HTTP '
+                          'code is %d. The query string is %s' %
+                          (response.status_code, query_str))
+            return ads_dict
 
         data = response.json()
         data_docs = data['response']['docs']
-        ads_dict = dict()
 
         if len(data_docs) == 0:
-            warnings.warn('0 document found in the ADS database')
+            warnings.warn('[Warning] 0 document found in the ADS database')
             return ads_dict
 
         if len(data_docs) > 1:
-            warnings.warn('There are multiple documents returned from the ADS '
-                          'database, and we are using the first document.')
+            warnings.warn('[Warning] There are multiple documents returned '
+                          'from the ADS database, and we are using the first '
+                          'document.')
+            warnings.warn(json.dumps(data_docs['title']))
 
         data_docs = data_docs[0]
 
@@ -62,15 +166,15 @@ class AdsParser(TikaParser):
 
         return ads_dict
 
-    def parse(self, file_path):
+    def parse(self, file_path, query_dict=None):
         tika_dict = super(AdsParser, self).parse(file_path)
-
-        # Get the title of the paper from grobid
-        title = tika_dict['metadata']['grobid:header_Title']
+        query_str = self.construct_query_string(tika_dict, query_dict)
+        if len(query_str) == 0:
+            warnings.warn('[WARNING] grobid title not found')
+            return tika_dict
 
         # Query the ADS database
-        ads_dict = self.query_ads_database(title)
-
+        ads_dict = self.query_ads_database(query_str)
         if len(ads_dict) == 0:
             return tika_dict
 
@@ -85,7 +189,17 @@ class AdsParser(TikaParser):
         return tika_dict
 
 
-def process(in_file, in_list, out_file, tika_server_url, ads_url, ads_token):
+def process(in_file, in_list, out_file, log_file, tika_server_url, ads_url,
+            ads_token):
+    # Log input parameters
+    logger = LogUtil('ads-parser', log_file)
+    logger.info('Input parameters')
+    logger.info('in_file: %s' % in_file)
+    logger.info('in_list: %s' % in_list)
+    logger.info('out_file: %s' % out_file)
+    logger.info('tika_server_url: %s' % tika_server_url)
+    logger.info('ads_url: %s' % ads_url)
+    logger.info('ads_token: %s' % ads_token)
     if in_file and in_list:
         print('[ERROR] in_file and in_list cannot be provided simultaneously')
         sys.exit(1)
@@ -98,12 +212,16 @@ def process(in_file, in_list, out_file, tika_server_url, ads_url, ads_token):
         files = read_lines(in_list)
 
     out_f = open(out_file, 'wb', 1)
-    progress = progress_bar('ADS parser')
-    for f in progress(files):
-        ads_dict = ads_parser.parse(f)
+    for f in tqdm(files):
+        logger.info('Processing %s' % os.path.basename(f))
+        try:
+            ads_dict = ads_parser.parse(f)
 
-        out_f.write(json.dumps(ads_dict))
-        out_f.write('\n')
+            out_f.write(json.dumps(ads_dict))
+            out_f.write('\n')
+        except Exception as e:
+            logger.info('ADS parser failed: %s' % os.path.abspath(f))
+            logger.error(e)
 
     out_f.close()
 
@@ -118,6 +236,10 @@ def main():
     input_parser.add_argument('-li', '--in_list', help='Path to input list')
     parser.add_argument('-o', '--out_file', required=True,
                         help='Path to output JSON file')
+    parser.add_argument('-l', '--log_file', default='./ads-parser-log.txt',
+                        help='Log file that contains processing information. '
+                             'It is default to ./ads-parser-log.txt unless '
+                             'otherwise specified.')
     parser.add_argument('-p', '--tika_server_url', required=False,
                         help='Tika server URL')
     parser.add_argument('-a', '--ads_url',

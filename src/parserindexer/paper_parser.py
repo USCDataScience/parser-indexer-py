@@ -1,10 +1,12 @@
 from __future__ import print_function
 
+import os
 import re
 import sys
 import json
+from tqdm import tqdm
+from utils import LogUtil
 from parser import Parser
-from utils import progress_bar
 from ioutils import read_lines
 from ads_parser import AdsParser
 from jsre_parser import JsreParser
@@ -64,8 +66,24 @@ class PaperParser(Parser):
         }
 
 
-def process(in_file, in_list, out_file, tika_server_url, corenlp_server_url,
-            ner_model, jsre_root, jsre_model, jsre_tmp_dir, ads_url, ads_token):
+def process(in_file, in_list, out_file, log_file, tika_server_url,
+            corenlp_server_url, ner_model, jsre_root, jsre_model, jsre_tmp_dir,
+            ads_url, ads_token):
+    # Log input parameters
+    logger = LogUtil('lpsc-parser', log_file)
+    logger.info('Input parameters')
+    logger.info('in_file: %s' % in_file)
+    logger.info('in_list: %s' % in_list)
+    logger.info('out_file: %s' % out_file)
+    logger.info('tika_server_url: %s' % tika_server_url)
+    logger.info('corenlp_server_url: %s' % corenlp_server_url)
+    logger.info('ner_model: %s' % os.path.abspath(ner_model))
+    logger.info('jsre_root: %s' % os.path.abspath(jsre_root))
+    logger.info('jsre_model: %s' % os.path.abspath(jsre_model))
+    logger.info('jsre_tmp_dir: %s' % os.path.abspath(jsre_tmp_dir))
+    logger.info('ads_url: %s' % ads_url)
+    logger.info('ads_token: %s' % ads_token)
+
     if in_file and in_list:
         print('[ERROR] in_file and in_list cannot be provided simultaneously')
         sys.exit(1)
@@ -81,21 +99,30 @@ def process(in_file, in_list, out_file, tika_server_url, corenlp_server_url,
         files = read_lines(in_list)
 
     out_f = open(out_file, 'wb', 1)
-    progress = progress_bar('Process journal papers')
-    for f in files:
-        ads_dict = ads_parser.parse(f)
-        paper_dict = paper_parser.parse(ads_dict['content'],
-                                        ads_dict['metadata'])
-        jsre_dict = jsre_parser.parse(paper_dict['cleaned_content'])
+    for f in tqdm(files):
+        logger.info('Processing %s' % os.path.basename(f))
+        try:
+            ads_dict = ads_parser.parse(f)
 
-        ads_dict['content_ann_s'] = paper_dict['cleaned_content']
-        ads_dict['metadata']['ner'] = jsre_dict['ner']
-        ads_dict['metadata']['rel'] = jsre_dict['relation']
-        ads_dict['metadata']['sentences'] = jsre_dict['sentences']
-        ads_dict['metadata']['X-Parsed-By'] = jsre_dict['X-Parsed-By']
+            if 'grobid:header_Title' in ads_dict['metadata'].keys():
+                logger.info('Document title: %s' %
+                            ads_dict['metadata']['grobid:header_Title'])
 
-        out_f.write(json.dumps(ads_dict))
-        out_f.write('\n')
+            paper_dict = paper_parser.parse(ads_dict['content'],
+                                            ads_dict['metadata'])
+            jsre_dict = jsre_parser.parse(paper_dict['cleaned_content'])
+
+            ads_dict['content_ann_s'] = paper_dict['cleaned_content']
+            ads_dict['metadata']['ner'] = jsre_dict['ner']
+            ads_dict['metadata']['rel'] = jsre_dict['relation']
+            ads_dict['metadata']['sentences'] = jsre_dict['sentences']
+            ads_dict['metadata']['X-Parsed-By'] = jsre_dict['X-Parsed-By']
+
+            out_f.write(json.dumps(ads_dict))
+            out_f.write('\n')
+        except Exception as e:
+            logger.info('Paper parser failed: %s' % os.path.abspath(f))
+            logger.error(e)
 
     out_f.close()
 
@@ -110,6 +137,10 @@ if __name__ == '__main__':
     input_parser.add_argument('-li', '--in_list', help='Path to input list')
     parser.add_argument('-o', '--out_file', required=True,
                         help='Path to output JSON file')
+    parser.add_argument('-l', '--log_file', default='./paper-parser-log.txt',
+                        help='Log file that contains processing information. '
+                             'It is default to ./paper-parser-log.txt unless '
+                             'otherwise specified.')
     parser.add_argument('-p', '--tika_server_url', required=False,
                         help='Tika server URL')
     parser.add_argument('-c', '--corenlp_server_url',
