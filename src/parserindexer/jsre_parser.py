@@ -9,6 +9,7 @@ import itertools
 import subprocess
 from tqdm import tqdm
 from utils import LogUtil
+from shutil import copyfile
 from ioutils import read_lines
 from utils import canonical_name
 from ads_parser import AdsParser
@@ -33,6 +34,27 @@ class JsreParser(CoreNLPParser):
         self.jsre_model = jsre_model
         self.jsre_tmp_dir = jsre_tmp_dir
         self.set_classpath()
+        self.copy_config_files()
+
+    def copy_config_files(self):
+        src_log_config_file = os.path.join(self.jsre_root, 'log-config.txt')
+        trt_log_config_file = os.path.join(os.getcwd(), 'log-config.txt')
+        src_jsre_config_file = os.path.join(self.jsre_root, 'jsre-config.xml')
+        trt_jsre_config_file = os.path.join(os.getcwd(), 'jsre-config.xml')
+
+        if not os.path.exists(src_log_config_file):
+            raise RuntimeError('JSRE configuration file log-config.txt not '
+                               'found in JSRE root directory %s' %
+                               os.path.abspath(self.jsre_root))
+
+        if not os.path.exists(src_jsre_config_file):
+            raise RuntimeError('JSRE configuration file jsre-config.xml not '
+                               'found in JSRE root directory %s' %
+                               os.path.abspath(self.jsre_root))
+
+        # Copy the JSRE config files to the current working directory
+        copyfile(src_log_config_file, trt_log_config_file)
+        copyfile(src_jsre_config_file, trt_jsre_config_file)
 
     def set_classpath(self):
         jars = [
@@ -99,6 +121,9 @@ class JsreParser(CoreNLPParser):
             elements = [t for t in sentence['tokens'] if t['ner'] == 'Element']
             minerals = [t for t in sentence['tokens'] if t['ner'] == 'Mineral']
 
+            if len(targets) == 0 or (len(elements) == 0 and len(minerals) == 0):
+                continue
+
             rels, recs = JsreParser.prepare_jsre_input(targets, elements,
                                                        sentence, rel_id='te')
             relations.extend(rels)
@@ -133,10 +158,10 @@ class JsreParser(CoreNLPParser):
         labels = jsre_out_file.readlines()
         for label, rel in zip(labels, relations):
             # If the label is non-zero, then it's a relationship
-            # 0 - negative
-            # 1 - entity_1 contains entity_2
-            # 2 - entity_2 contains entity_1
-            if label == '0':
+            # 0.0 - negative
+            # 1.0 - entity_1 contains entity_2
+            # 2.0 - entity_2 contains entity_1
+            if label == '0.0':
                 continue
 
             contains_relation.append({
@@ -171,7 +196,7 @@ def process(in_file, in_list, out_file, log_file, tika_server_url,
             corenlp_server_url, ner_model, jsre_root, jsre_model, jsre_tmp_dir,
             ads_url, ads_token):
     # Log input parameters
-    logger = LogUtil('lpsc-parser', log_file)
+    logger = LogUtil(log_file)
     logger.info('Input parameters')
     logger.info('in_file: %s' % in_file)
     logger.info('in_list: %s' % in_list)
