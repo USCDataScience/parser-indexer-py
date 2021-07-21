@@ -157,6 +157,7 @@ class AdsParser(TikaParser):
 
         data_docs = data_docs[0]
 
+        ads_dict['title'] = data_docs['title'][0]
         ads_dict['primary_author'] = data_docs['first_author']
         ads_dict['author'] = data_docs['author']
         ads_dict['affiliation'] = data_docs['aff']
@@ -179,6 +180,7 @@ class AdsParser(TikaParser):
             return tika_dict
 
         # Add ADS records to the dictionary returned from TIKA parser
+        tika_dict['metadata']['ads:title'] = ads_dict['title']
         tika_dict['metadata']['ads:primary_author'] = ads_dict['primary_author']
         tika_dict['metadata']['ads:author'] = ads_dict['author']
         tika_dict['metadata']['ads:affiliation'] = ads_dict['affiliation']
