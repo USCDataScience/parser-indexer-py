@@ -153,7 +153,7 @@ class AdsParser(TikaParser):
             warnings.warn('[Warning] There are multiple documents returned '
                           'from the ADS database, and we are using the first '
                           'document.')
-            warnings.warn(json.dumps(data_docs['title']))
+            warnings.warn(json.dumps(data_docs[0]['title']))
 
         data_docs = data_docs[0]
 
