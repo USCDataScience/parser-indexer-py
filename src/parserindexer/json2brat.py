@@ -33,6 +33,15 @@ def merge_adjacent(rels):
                          'cont_ids': ['element_30_32'], 'cont_names': ['Ca']}])
     [{'cont_ids': ['element_30_32'], 'target_names': ['Big Bob'], 'target_ids': ['target_1_8'], 'cont_names': ['Ca']}]
 
+    # Merge Big + Bob + Ben -> Big Bob Ben
+    >>> merge_adjacent([{'target_ids': ['target_1_4'], 'target_names': ['Big'], \
+                         'cont_ids': ['element_30_32'], 'cont_names': ['Ca']}, \
+                        {'target_ids': ['target_5_8'], 'target_names': ['Bob'], \
+                         'cont_ids': ['element_30_32'], 'cont_names': ['Ca']}, \
+                        {'target_ids': ['target_9_12'], 'target_names': ['Ben'], \
+                         'cont_ids': ['element_30_32'], 'cont_names': ['Ca']}])
+    [{'cont_ids': ['element_30_32'], 'target_names': ['Big Bob Ben'], 'target_ids': ['target_1_12'], 'cont_names': ['Ca']}]
+
     # Merge Big + Bob -> Big Bob with two different components
     >>> merge_adjacent([{'target_ids': ['target_1_4'], 'target_names': ['Big'], \
                          'cont_ids': ['element_30_32'], 'cont_names': ['Ca']}, \
@@ -49,6 +58,8 @@ def merge_adjacent(rels):
         change = False
         #print([r['target_ids'] for r in rels])
         for i in range(len(rels) - 1):
+            if i >= len(rels) - 1:
+                break
             tids = rels[i]['target_ids']
             # jSRE only returns one target per relation,
             # so we blindly index lists to 0 in several places
@@ -75,6 +86,8 @@ def merge_adjacent(rels):
                 rels.remove(rels[i + 1])
                 #print(rels)
                 #raw_input()
+                # In case we need to keep merging, keep checking the current one
+                i = i - 1
                 change = True
     return rels
 
