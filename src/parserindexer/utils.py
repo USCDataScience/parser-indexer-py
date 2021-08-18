@@ -1,9 +1,52 @@
+# -*- coding: utf-8 -*-
 import re
 import logging
 
 # Redirect warnings from stderr to Python standard logging (e.g., warnings
 # raised by `warnings.warn()` will be directly write to the log file)
 logging.captureWarnings(True)
+
+# Map target aliases to canonical names
+targettab = {
+    # MPF
+    'B._Bill': 'Barnacle_Bill',
+    'Bakers_Bench': "Baker's_Bench",
+    'Bambam': 'Bam_Bam',
+    'Bamm_Bamm': 'Bam_Bam',
+    'Fat_Top': 'Flat_Top',
+    'Garak': 'Garrak',
+    'Ga_Rrak': 'Garrak',
+    'H._Dome': 'Half_Dome',
+    'Hobbs': 'Hobbes',
+    'Mini-Matterhorn': 'Mini_Matterhorn',
+    'Mm': 'Mini_Matterhorn',
+    'Poohbear': 'Pooh_Bear',
+    'Scooby': 'Scooby_Doo',
+    'Souffl': 'Soufflé',
+    'Souffle': 'Soufflé',
+    "Souffle'": 'Soufflé',
+    'Soufle': 'Soufflé',
+    # PHX
+    'Bb': 'Baby_Bear',
+    'Bc': 'Burning_Coals',
+    'Bears_Lodge': "Bear's_Lodge",
+    'Dg': 'Dodo_Goldilocks',
+    'D_G': 'Dodo_Goldilocks',
+    'Dodo': 'Dodo_Goldilocks',
+    'Dodogoldilocks': 'Dodo_Goldilocks',
+    'Dodo-goldilocks': 'Dodo_Goldilocks',
+    'Dodogoldilocks_Trench': 'Dodo_Goldilocks_Trench',
+    'Dodo-goldilocks_Trench': 'Dodo_Goldilocks_Trench',
+    'Dodo-Goldilocks_Trench': 'Dodo_Goldilocks_Trench',
+    'Dodo_Trench': 'Dodo_Goldilocks_Trench',
+    'Lamancha': 'La_Mancha',
+    'Mamma_Bear': 'Mama_Bear',
+    'Mancha': 'La_Mancha',
+    'Rr': 'Rosy_Red',
+    'Rr1': 'Rosy_Red',
+    'Rr2': 'Rosy_Red',
+    'Ww': 'Wicked_Witch'
+    }
 
 # Elements symbol table
 symtab = {
@@ -166,6 +209,14 @@ def canonical_target_name(name, id, targets, aliases):
 
     return re.sub(r"[\s_-]+", " ", name).title().replace(' ', '_')
 
+def canonical_component_name(name):
+    """
+    This function gets canonical name for a component (either element/mineral): 
+    """
+    # remove hypen, unserscore, and extra space 
+    name = " ".join(re.sub(r"[-_]", " ",name).split())
+    name = " ".join([canonical_name(k) for k in name.split()])
+    return name
 
 class LogUtil(object):
     def __init__(self, log_file, filemode='w'):
