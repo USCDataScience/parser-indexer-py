@@ -498,7 +498,7 @@ class UnaryParser(CoreNLPParser):
                 id of GPU. Negative gpu_id means no GPU to be used. 
         """
 
-       super(UnaryParser, self).__init__(corenlp_server_url,ner_model_file,'jsre_parser') 
+        super(UnaryParser, self).__init__(corenlp_server_url,ner_model_file,'jsre_parser')
 
         self.corenlp_server_url = corenlp_server_url
         self.ner_model_file = ner_model_file
@@ -887,11 +887,12 @@ if __name__ == '__main__':
                         'closest_target'
                     ],
                     help='Method to form relations between entities. '
-                    'closest_containee: for each Container instance, link it to its closest Containee instance with a Contains relation'
-                    'closest_container: for each Containee instance, link it to its closest Container instance with a Contains relation'
-                    'closest_component: for each Container instance, link it to its closest Component instance with a Contains relation'
-                    'closest_target: for each Containee instance, link it to its closest Target instance with a Contains relation'
-                    'union_closest_containee_closest_container: union the relation instances found by closest_containee and closest_container')
+                    '[closest_containee]: for each Container instance, link it to its closest Containee instance with a Contains relation, '
+                    '[closest_container]: for each Containee instance, link it to its closest Container instance with a Contains relation, '
+                    '[closest_component]: for each Container instance, link it to its closest Component instance with a Contains relation, '
+                    '[closest_target]: for each Containee instance, link it to its closest Target instance with a Contains relation, '
+                    '[closest_target_closest_component]: union the relation instances found by closest_target and closest_component, '
+                    '[closest_container_closest_containee]: union the relation instances found by closest_containee and closest_container. This is the best method on the MTE test set')
 
     parser.add_argument('-g', '--gpu_id',
                     default = 0,
