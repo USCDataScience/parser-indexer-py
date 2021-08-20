@@ -108,7 +108,7 @@ class JsreParser(CoreNLPParser):
                self.jsre_model, out_file]
 
         fnull = open(os.devnull, 'w')
-        subprocess.call(cmd, stdout=fnull, stderr=subprocess.STDOUT)
+        subprocess.call(cmd, stdout=fnull)
         fnull.close()
 
     def parse(self, text):
