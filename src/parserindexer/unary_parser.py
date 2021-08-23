@@ -841,7 +841,6 @@ def process(in_file, in_list, out_file, log_file, tika_server_url, ads_url, ads_
 
     out_f.close()
 
-# python unary_parser.py -i ~/MTE/corpus-LPSC/lpsc15-C-raymond-sol1159-v3-utf8/2124.txt -o ./out.json  -n ~/MTE/trained_models/ner_model_train_62r15v3_emt_gazette.ser.gz -cnte ~/MTE/trained_models/within_sentence_unary_classifiers/containee/trained_model.ckpt -cntr ~/MTE/trained_models/within_sentence_unary_classifiers/container/trained_model.ckpt -m closest_container_closest_containee -g -1
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     input_parser = parser.add_mutually_exclusive_group(required=True)
