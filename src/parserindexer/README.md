@@ -375,6 +375,14 @@ python jgr_parser.py -li /PATH/TO/LIST/OF/PDF/FILES -o /PATH/TO/OUTPUT/JSONL/FIL
 
 * Unary Parser: 
 
+To install required packages, do the following: 
+
+```
+pip install torch
+pip install sacremoses==0.0.38
+pip install transformers==2.2.0
+```
+
 ```
 >>> python unary_parser.py -h
 usage: unary_parser.py [-h] (-i IN_FILE | -li IN_LIST) -o OUT_FILE
