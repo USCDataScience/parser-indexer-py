@@ -372,3 +372,67 @@ The example command is shown below:
 ```
 python jgr_parser.py -li /PATH/TO/LIST/OF/PDF/FILES -o /PATH/TO/OUTPUT/JSONL/FILE -l /PATH/TO/OUTPUT/LOG/FILE -n /PATH/TO/TRAINED/NER/MODEL -jr /PATH/TO/TRAINED/JSRE/MODEL
 ```
+
+* Unary Parser: 
+
+To install required packages, do the following: 
+
+```
+pip install torch
+pip install sacremoses==0.0.38
+pip install transformers==2.2.0
+```
+
+```
+>>> python unary_parser.py -h
+usage: unary_parser.py [-h] (-i IN_FILE | -li IN_LIST) -o OUT_FILE
+                      [-l LOG_FILE] [-p TIKA_SERVER_URL] [-a ADS_URL]
+                      [-t ADS_TOKEN]
+                      [-c CORENLP_SERVER_URL] [-n NER_MODEL] [-cnte CONTAINEE_MODEL_FILE] [-cntr CONTAINER_MODEL_FILE] [-m ENTITY_LINKING_METHOD] [-g GPU_ID] [-b BATCH_SIZE]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -i IN_FILE, --in_file IN_FILE
+                        Path to input file
+  -li IN_LIST, --in_list IN_LIST
+                        Path to input list
+  -o OUT_FILE, --out_file OUT_FILE
+                        Path to output JSON file
+  -l LOG_FILE, --log_file LOG_FILE
+                        Log file that contains processing information. It is
+                        default to ./jsre-parser-log.txt unless otherwise
+                        specified.
+  -p TIKA_SERVER_URL, --tika_server_url TIKA_SERVER_URL
+                        Tika server URL 
+  -a ADS_URL, --ads_url ADS_URL
+                        ADS RESTful API. The ADS RESTful API should not need
+                        to be changed frequently unless someting at the ADS is
+                        changed.
+  -t ADS_TOKEN, --ads_token ADS_TOKEN
+                        The ADS token, which is required to use the ADS
+                        RESTful API. The token was obtained using the
+                        instructions at https://github.com/adsabs/adsabs-dev-
+                        api#access. The ADS token should not need to be
+                        changed frequently unless something at the ADS is
+                        changed.
+  -cnte CONTAINEE_MODEL_FILE, --containee_model_file CONTAINEE_MODEL_FILE 
+                        Path to a trained Containee model
+  -cntr CONTAINER_MODEL_FILE, --container_model_file CONTAINER_MODEL_FILE 
+                        Path to a trained Container model
+  -m {closest_container_closest_containee,closest_target_closest_component,closest_containee,closest_container,closest_component,closest_target}, --entity_linking_method {closest_container_closest_containee,closest_target_closest_component,closest_containee,closest_container,closest_component,closest_target}
+                        Method to form relations between entities. [closest_containee]: for each Container instance, link it to its closest
+                        Containee instance with a Contains relation, [closest_container]: for each Containee instance, link it to its closest
+                        Container instance with a Contains relation, [closest_component]: for each Container instance, link it to its closest
+                        Component instance with a Contains relation, [closest_target]: for each Containee instance, link it to its closest
+                        Target instance with a Contains relation, [closest_target_closest_component]: union the relation instances found by closest_target and closest_component, [closest_container_closest_containee]: union the relation instances found by closest_containee and closest_container. This is the best method on the MTE test set
+  -g GPU_ID, --gpu_id GPU_ID
+                        GPU ID. If set to negative then no GPU would be used.
+  -b BATCH_SIZE, --batch_size BATCH_SIZE
+                        Batch size at inference time.
+```
+
+The example command is shown below:
+
+```
+python unary_parser.py -li /PATH/TO/LIST/OF/PDF/FILES -o /PATH/TO/OUTPUT/JSONL/FILE -l /PATH/TO/OUTPUT/LOG/FILE -n /PATH/TO/TRAINED/NER/MODEL -cnte /PATH/TO/CONTAINEE_FILE -cntr /PATH/TO/CONTAINER_FILE -m ENTITY_LINKING_METHOD -g GPU_ID
+```
